@@ -1062,6 +1062,7 @@ function exportToExcel() {
 // =============================================
 const SUPABASE_URL = 'https://jecqfntpvzwipjcleqbl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3FmbnRwdnp3aXBqY2xlcWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzE2NjIsImV4cCI6MjA5MDQ0NzY2Mn0.J26k1VElLscwOxhGTBXpyw-OnXZ-BZOiBW5vCG3CreI';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxoaQbc4NjqsoSxeUdHLbZODRHoyi33qsTPOdZ6UTYQW1Hr-sJ0ivwz8PeOetlbqi7S/exec';
 
 async function sbFetch(endpoint, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -1108,41 +1109,7 @@ async function loadProductosFromDB() {
   }
 }
 
-async function saveParteToSupabase() {
-  const productos = [];
-  for (let i = 1; i <= 5; i++) {
-    const prod = document.getElementById('producto' + i).value.trim();
-    const cant = parseFloat(document.getElementById('cantidad' + i).value) || null;
-    productos.push({ prod, cant });
-  }
-
-  // Check dosis alerts
-  const agua = parseFloat(document.getElementById('agua').value) || 0;
-  const alertas = productos.map(({prod, cant}) => {
-    if (!prod || !cant || !agua) return false;
-    const found = fitosanitarios.find(f => f.n.toLowerCase() === prod.toLowerCase());
-    if (!found || !found.dosis) return false;
-    const dosisReal = (cant / agua) * 100;
-    return dosisReal > found.dosis;
-  });
-
-  const parte = {
-    fecha: document.getElementById('fecha').value,
-    aplicadores: [state.aplicador],
-    tarea: state.tarea,
-    finca: state.finca,
-    cultivo: state.cultivo,
-    variedad: state.variedad,
-    agua: parseFloat(document.getElementById('agua').value) || null,
-    horas: parseFloat(document.getElementById('horas').value) || null,
-    producto1: productos[0].prod || null, cantidad1: productos[0].cant, dosis_alerta1: alertas[0],
-    producto2: productos[1].prod || null, cantidad2: productos[1].cant, dosis_alerta2: alertas[1],
-    producto3: productos[2].prod || null, cantidad3: productos[2].cant, dosis_alerta3: alertas[2],
-    producto4: productos[3].prod || null, cantidad4: productos[3].cant, dosis_alerta4: alertas[3],
-    producto5: productos[4].prod || null, cantidad5: productos[4].cant, dosis_alerta5: alertas[4],
-    tiene_alertas: alertas.some(Boolean)
-  };
-
+async function saveParteToSupabase(parte) {
   try {
     const res = await sbFetch('partes', {
       method: 'POST',
@@ -1160,6 +1127,21 @@ async function saveParteToSupabase() {
   }
 }
 
+async function saveToSheets(parte) {
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parte)
+    });
+    return true;
+  } catch(e) {
+    console.error('Error enviando a Sheets:', e);
+    return false;
+  }
+}
+
 document.getElementById('mainForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   if (!validateForm()) {
@@ -1170,21 +1152,52 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
 
   // Show loading state
   const btn = document.querySelector('.btn-submit');
-  btn.textContent = 'Guardando...';
+  btn.textContent = 'Enviando...';
   btn.disabled = true;
 
-  // Save to Supabase
-  const saved = await saveParteToSupabase();
+  // Build parte object
+  const productos = [];
+  for (let i = 1; i <= 5; i++) {
+    const prod = document.getElementById('producto' + i).value.trim();
+    const cant = parseFloat(document.getElementById('cantidad' + i).value) || null;
+    productos.push({ prod, cant });
+  }
+  const agua = parseFloat(document.getElementById('agua').value) || 0;
+  const alertas = productos.map(({prod, cant}) => {
+    if (!prod || !cant || !agua) return false;
+    const found = fitosanitarios.find(f => f.n.toLowerCase() === prod.toLowerCase());
+    if (!found || !found.dosis) return false;
+    return (cant / agua) * 100 > found.dosis;
+  });
 
-  // Export Excel regardless
-  exportToExcel();
+  const parte = {
+    fecha: document.getElementById('fecha').value,
+    aplicadores: [state.aplicador],
+    tarea: state.tarea,
+    finca: state.finca,
+    cultivo: state.cultivo,
+    variedad: state.variedad,
+    agua: agua || null,
+    horas: parseFloat(document.getElementById('horas').value) || null,
+    producto1: productos[0].prod || null, cantidad1: productos[0].cant, dosis_alerta1: alertas[0],
+    producto2: productos[1].prod || null, cantidad2: productos[1].cant, dosis_alerta2: alertas[1],
+    producto3: productos[2].prod || null, cantidad3: productos[2].cant, dosis_alerta3: alertas[2],
+    producto4: productos[3].prod || null, cantidad4: productos[3].cant, dosis_alerta4: alertas[3],
+    producto5: productos[4].prod || null, cantidad5: productos[4].cant, dosis_alerta5: alertas[4],
+    tiene_alertas: alertas.some(Boolean)
+  };
 
-  // Update success message based on save result
+  // Send to both Supabase and Sheets in parallel
+  const [savedDB, savedSheets] = await Promise.all([
+    saveParteToSupabase(parte),
+    saveToSheets(parte)
+  ]);
+
   const msg = document.querySelector('.success-box p');
-  if (saved) {
-    msg.textContent = 'El parte ha sido guardado en la base de datos y el Excel descargado.';
+  if (savedDB) {
+    msg.textContent = '✅ Parte enviado y guardado correctamente.';
   } else {
-    msg.textContent = 'El Excel se ha descargado. ⚠️ No se pudo guardar en la base de datos, comprueba la conexión.';
+    msg.textContent = '⚠️ Parte enviado pero hubo un problema al guardar. Contacta con la oficina.';
   }
 
   btn.textContent = 'Enviar Parte';
