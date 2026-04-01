@@ -559,17 +559,36 @@
 const aplicadores = ['PACO','JOSE','JAVI','ANTONIO','MIGUEL','JUAN','DAVID','JAFAR','KLEVER','FABIAN','CLEMENTE','SARA','PILAR','ISABEL'];
 const tareas = ['FUMIGAR','ABONAR','INYECTAR','TRATAMIENTO RIEGO','GRANULO','ESPOLVOREO','VARIOS'];
 const fincas = ['La Pacheca','Los Luises','La Carrasca','Los Llanos','Lo Alegre'];
-const cultivos = ['LIMÓN','PIMIENTO','MANDARINOS','GRANADOS','NARANJA','POMELO','BRÓCOLI','MELÓN','CALABAZA','PANTANO','TODO'];
-const variedades = [
-  'VERNAS','FINOS','VIEJOS (15)','CHAPARROS (7)','LIMÓN ANTOLÍN (21)','LIMÓN 2020 (12)',
-  'NUEVOS CARRETERA (12N)','NUEVOS CONEJOS (8)','NUEVOS MOLINERO (4)',
-  'INVERNADERO 1','INVERNADERO 2','INVERNADERO 3','INVERNADERO 4','INVERNADERO 5','INVERNADERO 6','INVERNADEROS TODOS',
-  'TANGO (16 + 16B)','SOON Y RUBI (18)','RUBI INVERNADEROS (20)','SOON CASA (9)','SOON CASA PINO (11)',
-  'INJERTOS (3 + 3A)','RUBI INJERTOS (3)','SOON INJERTOS (3A)','ORONULES (22)','ORONULES (LP)','NULESSIN (LP)',
-  'MANDANOVA MANCO (14)','CULTIFORT (9A)','CLEMENULES (19)','PAQUITAS (19)','GOLD NUGGET (19)',
-  'GOLD NUGGET (23A)','GOLD NUGGET (SJ)','NEUFINA (23)','POMELO START RUBI','GRANADOS',
-  'VALENCIA LATE (17)','BROCOLI','MELON','CALABAZA','PANTANO','TODO'
-];
+
+// Finca → Cultivos → Variedades
+const fincaData = {
+  'La Pacheca': {
+    'LIMÓN': ['VERNAS','ORONULES (LP)','NULESSIN (LP)'],
+    'PIMIENTO': ['INVERNADERO 1','INVERNADERO 2','INVERNADERO 3','INVERNADERO 4','INVERNADERO 5','INVERNADEROS TODOS'],
+    'MANDARINOS': ['ORONULES (LP)','NULESSIN (LP)']
+  },
+  'La Carrasca': {
+    'LIMÓN': ['FINOS'],
+    'PIMIENTO': ['INVERNADERO 1','INVERNADERO 2','INVERNADERO 3','INVERNADERO 4','INVERNADERO 5','INVERNADERO 6','INVERNADEROS TODOS'],
+    'MANDARINOS': ['GOLD NUGGET (SJ)']
+  },
+  'Los Luises': {
+    'GRANADOS': ['GRANADOS'],
+    'NARANJA': ['VALENCIA LATE (17)'],
+    'MANDARINOS': ['SOON Y RUBI (18)','RUBI INVERNADEROS (20)','SOON CASA (9)','SOON CASA PINO (11)','INJERTOS (3 + 3A)','RUBI INJERTOS (3)','SOON INJERTOS (3A)','CLEMENULES (19)','PAQUITAS (19)','GOLD NUGGET (19)','MANDANOVA MANCO (14)','CULTIFORT (9A)']
+  },
+  'Los Llanos': {
+    'LIMÓN': ['VIEJOS (15)','CHAPARROS (7)','LIMÓN ANTOLÍN (21)','LIMÓN 2020 (12)','NUEVOS CARRETERA (12N)','NUEVOS CONEJOS (8)','NUEVOS MOLINERO (4)'],
+    'MANDARINOS': ['TANGO (16 + 16B)','SOON Y RUBI (18)','RUBI INVERNADEROS (20)','SOON CASA (9)','SOON CASA PINO (11)','INJERTOS (3 + 3A)','RUBI INJERTOS (3)','SOON INJERTOS (3A)','ORONULES (22)','GOLD NUGGET (23A)','NEUFINA (23)','MANDANOVA MANCO (14)','CULTIFORT (9A)'],
+    'POMELO': ['POMELO START RUBI']
+  },
+  'Lo Alegre': {
+    'LIMÓN': ['FINOS'],
+    'BRÓCOLI': ['BRÓCOLI'],
+    'MELÓN': ['MELÓN'],
+    'CALABAZA': ['CALABAZA']
+  }
+};
 
 const state = {
   aplicador: null,
@@ -634,11 +653,44 @@ function buildRadioGrid(containerId, items, stateKey) {
       grid.querySelectorAll('.opt-label').forEach(l => l.classList.remove('checked'));
       lbl.classList.add('checked');
       document.getElementById('g-' + stateKey)?.classList.remove('field-error');
-      // Si cambia la finca, refrescar todos los badges de eco
-      if (stateKey === 'finca') refreshAllEcoBadges();
+      if (stateKey === 'finca') {
+        refreshAllEcoBadges();
+        updateCultivos();
+      }
+      if (stateKey === 'cultivo') {
+        updateVariedades();
+      }
     });
     grid.appendChild(lbl);
   });
+}
+
+function updateCultivos() {
+  // Reset cultivo and variedad state
+  state.cultivo = null;
+  state.variedad = null;
+
+  const cultivos = state.finca ? Object.keys(fincaData[state.finca]) : [];
+  buildRadioGrid('cultivo-grid', cultivos, 'cultivo');
+
+  // Clear variedad grid
+  const varGrid = document.getElementById('variedad-grid');
+  varGrid.innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+
+  // Clear error states
+  document.getElementById('g-cultivo')?.classList.remove('field-error');
+  document.getElementById('g-variedad')?.classList.remove('field-error');
+}
+
+function updateVariedades() {
+  state.variedad = null;
+
+  const variedades = (state.finca && state.cultivo && fincaData[state.finca][state.cultivo])
+    ? fincaData[state.finca][state.cultivo]
+    : [];
+
+  buildRadioGrid('variedad-grid', variedades, 'variedad');
+  document.getElementById('g-variedad')?.classList.remove('field-error');
 }
 
 // FITOSANITARIOS — eco: true = autorizado ecológico, false = NO autorizado, null = consultar
@@ -968,11 +1020,13 @@ function buildProducts() {
 }
 
 // Init
-buildRadioGrid('aplicador-grid', aplicadores, 'aplicador', true);
-buildRadioGrid('tarea-grid', tareas, 'tarea', false);
-buildRadioGrid('finca-grid', fincas, 'finca', true);
-buildRadioGrid('cultivo-grid', cultivos, 'cultivo', true);
-buildRadioGrid('variedad-grid', variedades, 'variedad', true);
+buildRadioGrid('aplicador-grid', aplicadores, 'aplicador');
+buildRadioGrid('tarea-grid', tareas, 'tarea');
+buildRadioGrid('finca-grid', fincas, 'finca');
+
+// Cultivo y variedad empiezan vacíos, se rellenan al elegir finca/cultivo
+document.getElementById('cultivo-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero una finca</div>';
+document.getElementById('variedad-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
 // buildProducts() is called after DB load below
 
 // Set today's date
@@ -1251,6 +1305,10 @@ function clearForm() {
   document.querySelectorAll('.opt-label').forEach(l => l.classList.remove('checked'));
   document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
   document.getElementById('fecha').value = today;
+  document.getElementById('cultivo-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero una finca</div>';
+  document.getElementById('variedad-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+  document.querySelectorAll('.eco-badge').forEach(b => { b.className = 'eco-badge'; b.textContent = ''; });
+  document.getElementById('consejo-banner').style.display = 'none';
 }
 
 function newForm() {
