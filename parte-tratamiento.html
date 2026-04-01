@@ -786,7 +786,23 @@ function getEcoStatus(name) {
   const keyLower = key.toLowerCase();
   const consejo = state.finca ? fincaConsejo[state.finca] : null;
 
-  // Check consejo-specific override first
+  // First look up in fitosanitarios list (loaded from Supabase)
+  const found = fitosanitarios.find(f => f.n.toLowerCase() === keyLower);
+  if (found) {
+    let ecoVal;
+    if (consejo === 'CAERM') {
+      ecoVal = found.eco_caerm !== undefined ? found.eco_caerm : found.eco;
+    } else if (consejo === 'CVB') {
+      ecoVal = found.eco_cvb !== undefined ? found.eco_cvb : found.eco;
+    } else {
+      ecoVal = found.eco;
+    }
+    if (ecoVal === true) return 'ok';
+    if (ecoVal === false) return 'warn';
+    return 'unknown';
+  }
+
+  // Fall back to consejo-specific overrides
   if (consejo && consejoRestricciones[key] !== undefined) {
     const val = consejoRestricciones[key][consejo];
     if (val === true) return 'ok';
@@ -794,7 +810,7 @@ function getEcoStatus(name) {
     return 'unknown';
   }
 
-  // Fall back to general eco flag
+  // Last resort: general eco sets
   if (ecoSet.has(keyLower)) return 'ok';
   if (noEcoSet.has(keyLower)) return 'warn';
   return 'unknown';
