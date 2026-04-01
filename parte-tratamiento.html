@@ -1163,6 +1163,8 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     productos.push({ prod, cant });
   }
   const agua = parseFloat(document.getElementById('agua').value) || 0;
+  const consejo = state.finca ? fincaConsejo[state.finca] : null;
+
   const alertas = productos.map(({prod, cant}) => {
     if (!prod || !cant || !agua) return false;
     const found = fitosanitarios.find(f => f.n.toLowerCase() === prod.toLowerCase());
@@ -1170,21 +1172,37 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     return (cant / agua) * 100 > found.dosis;
   });
 
+  const ecoAlertas = productos.map(({prod}) => {
+    if (!prod) return null;
+    const found = fitosanitarios.find(f => f.n.toLowerCase() === prod.toLowerCase());
+    if (!found) return 'unknown';
+    const ecoVal = consejo === 'CAERM' ? found.eco_caerm : consejo === 'CVB' ? found.eco_cvb : found.eco;
+    if (ecoVal === true) return 'ok';
+    if (ecoVal === false) return 'warn';
+    return 'unknown';
+  });
+
+  const tieneEcoAlerta = ecoAlertas.some(e => e === 'warn');
+  const tieneVerificar = ecoAlertas.some(e => e === 'unknown');
+
   const parte = {
     fecha: document.getElementById('fecha').value,
     aplicadores: [state.aplicador],
     tarea: state.tarea,
     finca: state.finca,
+    consejo: consejo || '',
     cultivo: state.cultivo,
     variedad: state.variedad,
     agua: agua || null,
     horas: parseFloat(document.getElementById('horas').value) || null,
-    producto1: productos[0].prod || null, cantidad1: productos[0].cant, dosis_alerta1: alertas[0],
-    producto2: productos[1].prod || null, cantidad2: productos[1].cant, dosis_alerta2: alertas[1],
-    producto3: productos[2].prod || null, cantidad3: productos[2].cant, dosis_alerta3: alertas[2],
-    producto4: productos[3].prod || null, cantidad4: productos[3].cant, dosis_alerta4: alertas[3],
-    producto5: productos[4].prod || null, cantidad5: productos[4].cant, dosis_alerta5: alertas[4],
-    tiene_alertas: alertas.some(Boolean)
+    producto1: productos[0].prod || null, cantidad1: productos[0].cant, dosis_alerta1: alertas[0], eco_alerta1: ecoAlertas[0],
+    producto2: productos[1].prod || null, cantidad2: productos[1].cant, dosis_alerta2: alertas[1], eco_alerta2: ecoAlertas[1],
+    producto3: productos[2].prod || null, cantidad3: productos[2].cant, dosis_alerta3: alertas[2], eco_alerta3: ecoAlertas[2],
+    producto4: productos[3].prod || null, cantidad4: productos[3].cant, dosis_alerta4: alertas[3], eco_alerta4: ecoAlertas[3],
+    producto5: productos[4].prod || null, cantidad5: productos[4].cant, dosis_alerta5: alertas[4], eco_alerta5: ecoAlertas[4],
+    tiene_alertas: alertas.some(Boolean) || tieneEcoAlerta,
+    tiene_eco_alerta: tieneEcoAlerta,
+    tiene_verificar: tieneVerificar
   };
 
   // Send to both Supabase and Sheets in parallel
