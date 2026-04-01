@@ -677,11 +677,13 @@ function updateCultivos() {
     const lbl = document.createElement('label');
     lbl.className = 'opt-label';
     lbl.innerHTML = `<input type="checkbox" name="cultivo" value="${item}"><span class="sq"></span>${item}`;
-    lbl.addEventListener('click', () => {
-      const checked = lbl.classList.toggle('checked');
-      if (checked) {
-        state.cultivos.push(item);
+    const cb = lbl.querySelector('input');
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        lbl.classList.add('checked');
+        if (!state.cultivos.includes(item)) state.cultivos.push(item);
       } else {
+        lbl.classList.remove('checked');
         state.cultivos = state.cultivos.filter(c => c !== item);
       }
       document.getElementById('g-cultivo')?.classList.remove('field-error');
@@ -739,11 +741,13 @@ function addVariedadCheckbox(grid, item) {
   const lbl = document.createElement('label');
   lbl.className = 'opt-label';
   lbl.innerHTML = `<input type="checkbox" name="variedad" value="${item}"><span class="sq"></span>${item}`;
-  lbl.addEventListener('click', () => {
-    const checked = lbl.classList.toggle('checked');
-    if (checked) {
-      state.variedades.push(item);
+  const cb = lbl.querySelector('input');
+  cb.addEventListener('change', () => {
+    if (cb.checked) {
+      lbl.classList.add('checked');
+      if (!state.variedades.includes(item)) state.variedades.push(item);
     } else {
+      lbl.classList.remove('checked');
       state.variedades = state.variedades.filter(v => v !== item);
     }
     document.getElementById('g-variedad')?.classList.remove('field-error');
