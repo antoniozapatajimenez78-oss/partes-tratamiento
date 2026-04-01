@@ -500,13 +500,13 @@
       </div>
 
       <div class="field-group" id="g-cultivo">
-        <label>Cultivo <span class="req">*</span></label>
+        <label>Cultivo <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;opacity:0.7">(puedes elegir varios)</span></label>
         <div class="options-grid compact" id="cultivo-grid"></div>
-        <div class="error-msg">Selecciona un cultivo.</div>
+        <div class="error-msg">Selecciona al menos un cultivo.</div>
       </div>
 
       <div class="field-group" id="g-variedad">
-        <label>Variedad <span class="req">*</span></label>
+        <label>Variedad <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;opacity:0.7">(puedes elegir varias)</span></label>
         <div class="options-grid wide" id="variedad-grid"></div>
         <div class="error-msg">Selecciona una variedad.</div>
       </div>
@@ -594,8 +594,8 @@ const state = {
   aplicador: null,
   tarea: null,
   finca: null,
-  cultivo: null,
-  variedad: null
+  cultivos: [],    // multiple
+  variedades: []   // multiple
 };
 
 // Finca → Consejo regulador
@@ -666,31 +666,89 @@ function buildRadioGrid(containerId, items, stateKey) {
 }
 
 function updateCultivos() {
-  // Reset cultivo and variedad state
-  state.cultivo = null;
-  state.variedad = null;
+  state.cultivos = [];
+  state.variedades = [];
 
   const cultivos = state.finca ? Object.keys(fincaData[state.finca]) : [];
-  buildRadioGrid('cultivo-grid', cultivos, 'cultivo');
+  const grid = document.getElementById('cultivo-grid');
+  grid.innerHTML = '';
 
-  // Clear variedad grid
-  const varGrid = document.getElementById('variedad-grid');
-  varGrid.innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+  cultivos.forEach(item => {
+    const lbl = document.createElement('label');
+    lbl.className = 'opt-label';
+    lbl.innerHTML = `<input type="checkbox" name="cultivo" value="${item}"><span class="sq"></span>${item}`;
+    lbl.addEventListener('click', () => {
+      const checked = lbl.classList.toggle('checked');
+      if (checked) {
+        state.cultivos.push(item);
+      } else {
+        state.cultivos = state.cultivos.filter(c => c !== item);
+      }
+      document.getElementById('g-cultivo')?.classList.remove('field-error');
+      updateVariedades();
+    });
+    grid.appendChild(lbl);
+  });
 
-  // Clear error states
+  document.getElementById('variedad-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
   document.getElementById('g-cultivo')?.classList.remove('field-error');
   document.getElementById('g-variedad')?.classList.remove('field-error');
 }
 
 function updateVariedades() {
-  state.variedad = null;
+  state.variedades = [];
+  const grid = document.getElementById('variedad-grid');
+  grid.innerHTML = '';
 
-  const variedades = (state.finca && state.cultivo && fincaData[state.finca][state.cultivo])
-    ? fincaData[state.finca][state.cultivo]
-    : [];
+  if (!state.finca || state.cultivos.length === 0) {
+    grid.innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+    return;
+  }
 
-  buildRadioGrid('variedad-grid', variedades, 'variedad');
+  // Gather all variedades from selected cultivos, avoiding duplicates
+  const todasVariedades = [];
+  state.cultivos.forEach(cultivo => {
+    const vars = fincaData[state.finca][cultivo] || [];
+    vars.forEach(v => {
+      if (!todasVariedades.includes(v)) todasVariedades.push(v);
+    });
+  });
+
+  // If multiple cultivos selected, group by cultivo
+  if (state.cultivos.length > 1) {
+    state.cultivos.forEach(cultivo => {
+      const vars = fincaData[state.finca][cultivo] || [];
+      if (vars.length === 0) return;
+
+      // Add cultivo label
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'grid-column:1/-1;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--green-mid);margin-top:0.5rem;padding-bottom:0.2rem;border-bottom:1px solid var(--border)';
+      lbl.textContent = cultivo;
+      grid.appendChild(lbl);
+
+      vars.forEach(v => addVariedadCheckbox(grid, v));
+    });
+  } else {
+    todasVariedades.forEach(v => addVariedadCheckbox(grid, v));
+  }
+
   document.getElementById('g-variedad')?.classList.remove('field-error');
+}
+
+function addVariedadCheckbox(grid, item) {
+  const lbl = document.createElement('label');
+  lbl.className = 'opt-label';
+  lbl.innerHTML = `<input type="checkbox" name="variedad" value="${item}"><span class="sq"></span>${item}`;
+  lbl.addEventListener('click', () => {
+    const checked = lbl.classList.toggle('checked');
+    if (checked) {
+      state.variedades.push(item);
+    } else {
+      state.variedades = state.variedades.filter(v => v !== item);
+    }
+    document.getElementById('g-variedad')?.classList.remove('field-error');
+  });
+  grid.appendChild(lbl);
 }
 
 // FITOSANITARIOS — eco: true = autorizado ecológico, false = NO autorizado, null = consultar
@@ -1044,11 +1102,20 @@ function validateForm() {
   } else { gFecha.classList.remove('field-error'); }
 
   // Radio fields
-  ['aplicador','finca','cultivo','variedad'].forEach(key => {
+  ['aplicador','finca'].forEach(key => {
     const g = document.getElementById('g-' + key);
     if (!state[key]) { g.classList.add('field-error'); valid = false; }
     else { g.classList.remove('field-error'); }
   });
+
+  // Multi-select fields
+  const gCultivo = document.getElementById('g-cultivo');
+  if (!state.cultivos || state.cultivos.length === 0) { gCultivo.classList.add('field-error'); valid = false; }
+  else { gCultivo.classList.remove('field-error'); }
+
+  const gVariedad = document.getElementById('g-variedad');
+  if (!state.variedades || state.variedades.length === 0) { gVariedad.classList.add('field-error'); valid = false; }
+  else { gVariedad.classList.remove('field-error'); }
 
   // Agua
   const gAgua = document.getElementById('g-agua');
@@ -1261,8 +1328,8 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     tarea: state.tarea,
     finca: state.finca,
     consejo: consejo || '',
-    cultivo: state.cultivo,
-    variedad: state.variedad,
+    cultivo: state.cultivos.join(', '),
+    variedad: state.variedades.join(', '),
     agua: agua || null,
     horas: parseFloat(document.getElementById('horas').value) || null,
     producto1: productos[0].prod || null, cantidad1: productos[0].cant, dosis_alerta1: alertas[0], eco_alerta1: ecoAlertas[0],
@@ -1301,7 +1368,11 @@ loadProductosFromDB().then(() => {
 function clearForm() {
   if (!confirm('¿Seguro que quieres limpiar el formulario?')) return;
   document.getElementById('mainForm').reset();
-  Object.keys(state).forEach(k => state[k] = null);
+  state.aplicador = null;
+  state.tarea = null;
+  state.finca = null;
+  state.cultivos = [];
+  state.variedades = [];
   document.querySelectorAll('.opt-label').forEach(l => l.classList.remove('checked'));
   document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
   document.getElementById('fecha').value = today;
