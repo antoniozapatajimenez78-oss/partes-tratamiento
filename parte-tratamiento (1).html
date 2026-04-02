@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parte de Tratamiento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark: #1a2e1a;
+    --green-mid: #2d5a27;
+    --green-light: #4a8c3f;
+    --green-accent: #7bc67a;
+    --earth: #c4a265;
+    --earth-light: #e8d5b0;
+    --cream: #f5f0e8;
+    --white: #fdfcf9;
+    --text-dark: #1a2e1a;
+    --text-mid: #3d5c3a;
+    --border: #c8d9c4;
+    --shadow: rgba(26,46,26,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    min-height: 100vh;
+    color: var(--text-dark);
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(74,140,63,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 90% 80%, rgba(196,162,101,0.1) 0%, transparent 50%);
+  }
+
+  .header {
+    background: var(--green-dark);
+    padding: 2rem 1.5rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(74,140,63,0.15);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: 30%;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(196,162,101,0.1);
+  }
+  .header-inner {
+    position: relative; z-index: 1;
+    max-width: 640px; margin: 0 auto;
+  }
+  .header-tag {
+    display: inline-block;
+    background: var(--green-accent);
+    color: var(--green-dark);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    margin-bottom: 0.75rem;
+  }
+  .header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    color: var(--white);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .header p {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+    font-weight: 300;
+  }
+
+  .form-container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px var(--shadow);
+    animation: fadeUp 0.4s ease both;
+  }
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+  .card:nth-child(4) { animation-delay: 0.2s; }
+  .card:nth-child(5) { animation-delay: 0.25s; }
+  .card:nth-child(6) { animation-delay: 0.3s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    color: var(--green-mid);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px;
+    background: var(--green-light);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    margin-bottom: 0.4rem;
+  }
+  label .req { color: #c0392b; margin-left: 2px; }
+
+  input[type="date"],
+  input[type="text"],
+  input[type="number"] {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    background: var(--cream);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  input:focus {
+    border-color: var(--green-light);
+    box-shadow: 0 0 0 3px rgba(74,140,63,0.12);
+    background: var(--white);
+  }
+
+  .field-group {
+    margin-bottom: 1.1rem;
+  }
+  .field-group:last-child { margin-bottom: 0; }
+
+  /* Radio/Checkbox grid */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.4rem;
+  }
+  .options-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+  .options-grid.wide {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .opt-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-mid);
+    transition: all 0.15s;
+    background: var(--cream);
+    text-transform: none;
+    letter-spacing: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .opt-label:hover {
+    border-color: var(--green-light);
+    background: rgba(74,140,63,0.05);
+  }
+  .opt-label input { display: none; }
+  .opt-label.checked {
+    border-color: var(--green-light);
+    background: rgba(74,140,63,0.1);
+    color: var(--green-dark);
+    font-weight: 600;
+  }
+  .opt-label .dot {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .opt-label.checked .dot {
+    border-color: var(--green-light);
+    background: var(--green-light);
+  }
+  .opt-label .sq {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .opt-label.checked .sq {
+    border-color: var(--green-light);
+    background: var(--green-light);
+  }
+
+  /* Products section */
+  .product-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.6rem;
+    align-items: end;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .product-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .product-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    color: var(--earth);
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+  .product-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+  /* Water/Hours row */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  /* Submit */
+  .submit-area {
+    padding: 0 0 1rem;
+    animation: fadeUp 0.4s 0.35s ease both;
+  }
+  .btn-submit {
+    width: 100%;
+    padding: 1rem;
+    background: var(--green-dark);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-submit:hover {
+    background: var(--green-mid);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(26,46,26,0.25);
+  }
+  .btn-submit:active { transform: translateY(0); }
+
+  .btn-clear {
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.7rem;
+    background: transparent;
+    color: var(--text-mid);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-clear:hover { border-color: #c0392b; color: #c0392b; background: rgba(192,57,43,0.04); }
+
+  /* Success overlay */
+  .success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,46,26,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .success-overlay.show { display: flex; }
+  .success-box {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    max-width: 320px;
+    width: 90%;
+    animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .success-icon {
+    font-size: 3rem; margin-bottom: 1rem;
+  }
+  .success-box h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    color: var(--green-dark);
+    margin-bottom: 0.5rem;
+  }
+  .success-box p { color: var(--text-mid); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .btn-new {
+    padding: 0.75rem 2rem;
+    background: var(--green-dark);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+
+  .required-note {
+    font-size: 0.78rem;
+    color: var(--text-mid);
+    margin-bottom: 1.2rem;
+    opacity: 0.7;
+  }
+
+  .error-msg {
+    font-size: 0.75rem;
+    color: #c0392b;
+    margin-top: 0.3rem;
+    display: none;
+  }
+  .field-error input, .field-error .options-grid { outline: 1.5px solid #c0392b; border-radius: 10px; }
+  .field-error .error-msg { display: block; }
+
+  /* Autocomplete */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--white);
+    border: 1.5px solid var(--green-light);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(26,46,26,0.15);
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 50;
+    display: none;
+  }
+  .autocomplete-list.open { display: block; }
+  .autocomplete-item {
+    padding: 0.6rem 1rem;
+    font-size: 0.88rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.active {
+    background: rgba(74,140,63,0.1);
+    color: var(--green-dark);
+    font-weight: 600;
+  }
+  .autocomplete-item mark {
+    background: var(--green-accent);
+    color: var(--green-dark);
+    border-radius: 3px;
+    padding: 0 1px;
+    font-weight: 700;
+  }
+  .autocomplete-empty {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+    color: var(--text-mid);
+    opacity: 0.6;
+    font-style: italic;
+  }
+
+  /* Eco badge */
+  .eco-badge {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+  }
+  .eco-badge.eco-ok {
+    display: flex;
+    background: rgba(74,140,63,0.12);
+    color: var(--green-mid);
+    border: 1px solid rgba(74,140,63,0.3);
+  }
+  .eco-badge.eco-warn {
+    display: flex;
+    background: rgba(192,57,43,0.08);
+    color: #c0392b;
+    border: 1px solid rgba(192,57,43,0.25);
+  }
+  .eco-badge.eco-unknown {
+    display: flex;
+    background: rgba(196,162,101,0.15);
+    color: #8a6a2a;
+    border: 1px solid rgba(196,162,101,0.4);
+  }
+  .autocomplete-item .eco-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .eco-dot.ok { background: #4a8c3f; }
+  .eco-dot.warn { background: #c0392b; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-tag">🌿 Agricultura</div>
+    <h1>Parte de<br>Tratamiento</h1>
+    <p>Registro de aplicaciones fitosanitarias</p>
+  </div>
+</div>
+
+<div class="form-container">
+  <p class="required-note"><span style="color:#c0392b">*</span> Campos obligatorios</p>
+
+  <form id="mainForm" novalidate>
+
+    <!-- FECHA + APLICADOR -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📅</span> Fecha y Aplicador</div>
+
+      <div class="field-group" id="g-fecha">
+        <label>Fecha <span class="req">*</span></label>
+        <input type="date" id="fecha" name="fecha">
+        <div class="error-msg">Por favor, selecciona una fecha.</div>
+      </div>
+
+      <div class="field-group" id="g-aplicador">
+        <label>Aplicador <span class="req">*</span></label>
+        <div class="options-grid compact" id="aplicador-grid">
+          <!-- JS fills this -->
+        </div>
+        <div class="error-msg">Selecciona un aplicador.</div>
+      </div>
+    </div>
+
+    <!-- TAREA -->
+    <div class="card">
+      <div class="card-title"><span class="icon">⚙️</span> Tarea</div>
+      <div class="field-group" id="g-tarea">
+        <div class="options-grid" id="tarea-grid"></div>
+        <div class="error-msg">Selecciona una tarea.</div>
+      </div>
+    </div>
+
+    <!-- FINCA + CULTIVO -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🌾</span> Finca y Cultivo</div>
+
+      <div class="field-group" id="g-finca">
+        <label>Finca <span class="req">*</span></label>
+        <div class="options-grid" id="finca-grid"></div>
+        <div class="error-msg">Selecciona una finca.</div>
+      </div>
+
+      <div class="field-group" id="g-cultivo">
+        <label>Cultivo <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;opacity:0.7">(puedes elegir varios)</span></label>
+        <div class="options-grid compact" id="cultivo-grid"></div>
+        <div class="error-msg">Selecciona al menos un cultivo.</div>
+      </div>
+
+      <div class="field-group" id="g-variedad">
+        <label>Variedad <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;opacity:0.7">(puedes elegir varias)</span></label>
+        <div class="options-grid wide" id="variedad-grid"></div>
+        <div class="error-msg">Selecciona una variedad.</div>
+      </div>
+    </div>
+
+    <!-- AGUA Y HORAS -->
+    <div class="card">
+      <div class="card-title"><span class="icon">💧</span> Agua y Horas</div>
+      <div class="two-col">
+        <div class="field-group" id="g-agua">
+          <label>Agua (L) <span class="req">*</span></label>
+          <input type="number" id="agua" name="agua" placeholder="0" min="0">
+          <div class="error-msg">Campo requerido.</div>
+        </div>
+        <div class="field-group" id="g-horas">
+          <label>Horas <span class="req">*</span></label>
+          <input type="number" id="horas" name="horas" placeholder="0" min="0" step="0.5">
+          <div class="error-msg">Campo requerido.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTOS -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🧪</span> Productos</div>
+      <div id="consejo-banner" style="display:none;margin-bottom:1rem;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;letter-spacing:0.03em;"></div>
+      <div id="productos-container"></div>
+    </div>
+
+    <!-- COMENTARIOS -->
+    <div class="card">
+      <div class="card-title"><span class="icon">💬</span> Observaciones</div>
+      <div class="field-group">
+        <label>Comentarios <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;opacity:0.7">(opcional)</span></label>
+        <textarea id="comentarios" name="comentarios" rows="3" placeholder="Incidencias, observaciones o cualquier detalle relevante del tratamiento..." style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:var(--text-dark);background:var(--cream);resize:vertical;outline:none;transition:border-color 0.2s,box-shadow 0.2s;" onfocus="this.style.borderColor='var(--green-light)';this.style.boxShadow='0 0 0 3px rgba(74,140,63,0.12)';this.style.background='var(--white)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';this.style.background='var(--cream)'"></textarea>
+      </div>
+    </div>
+
+    <div class="submit-area">
+      <button type="submit" class="btn-submit">Enviar Parte</button>
+      <button type="button" class="btn-clear" onclick="clearForm()">Limpiar formulario</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- Review overlay -->
+<div class="success-overlay" id="reviewOverlay">
+  <div class="success-box" style="max-width:420px;width:95%;max-height:85vh;overflow-y:auto;text-align:left;padding:1.5rem">
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:0.75rem">
+      <span style="font-size:1.4rem">📋</span>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.05em;color:var(--green-dark)">Resumen del Parte</h2>
+    </div>
+    <div id="review-content" style="font-size:0.88rem;color:var(--text-dark);line-height:1.8"></div>
+    <div style="display:flex;gap:0.75rem;margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem">
+      <button onclick="closeReview()" style="flex:1;padding:0.75rem;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;color:var(--text-mid)">✏️ Modificar</button>
+      <button onclick="confirmAndSend()" id="btn-confirm" style="flex:1.5;padding:0.75rem;background:var(--green-dark);color:white;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.08em;cursor:pointer">✅ Confirmar y Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <h2>Parte Enviado</h2>
+    <p>El parte ha sido registrado correctamente.</p>
+    <button class="btn-new" onclick="newForm()">Nuevo Parte</button>
+  </div>
+</div>
+
+<script>
+// DATA
+const aplicadores = ['PACO','JOSE','JAVI','ANTONIO','MIGUEL','JUAN','DAVID','JAFAR','KLEVER','FABIAN','CLEMENTE','SARA','PILAR','ISABEL'];
+const tareas = ['FUMIGAR','ABONAR','INYECTAR','TRATAMIENTO RIEGO','GRANULO','ESPOLVOREO','VARIOS'];
+const fincas = ['La Pacheca','Los Luises','La Carrasca','Los Llanos','Lo Alegre'];
+
+// Finca → Cultivos → Variedades
+const fincaData = {
+  'La Pacheca': {
+    'LIMÓN': ['VERNAS'],
+    'PIMIENTO': ['INVERNADERO 1','INVERNADERO 2','INVERNADERO 3','INVERNADERO 4','INVERNADERO 5','INVERNADEROS TODOS'],
+    'MANDARINOS': ['ORONULES (LP)','NULESSIN (LP)']
+  },
+  'La Carrasca': {
+    'LIMÓN': ['FINOS'],
+    'PIMIENTO': ['INVERNADERO 1','INVERNADERO 2','INVERNADERO 3','INVERNADERO 4','INVERNADERO 5','INVERNADERO 6','INVERNADEROS TODOS'],
+    'MANDARINOS': ['GOLD NUGGET (SJ)']
+  },
+  'Los Luises': {
+    'GRANADOS': ['GRANADOS'],
+    'NARANJA': ['VALENCIA LATE (17)'],
+    'MANDARINOS': ['SOON Y RUBI (18)','RUBI INVERNADEROS (20)','INJERTOS (3 + 3A)','RUBI INJERTOS (3)','SOON INJERTOS (3A)','CLEMENULES (19)','PAQUITAS (19)','GOLD NUGGET (19)','MANDANOVA MANCO (14)','CULTIFORT (9A)']
+  },
+  'Los Llanos': {
+    'LIMÓN': ['VIEJOS (15)','CHAPARROS (7)','LIMÓN ANTOLÍN (21)','LIMÓN 2020 (12)','NUEVOS CARRETERA (12N)','NUEVOS CONEJOS (8)','NUEVOS MOLINERO (4)'],
+    'MANDARINOS': ['TANGO (16 + 16B)','SOON Y RUBI (18)','RUBI INVERNADEROS (20)','LORETINA','INJERTOS (3 + 3A)','RUBI INJERTOS (3)','SOON INJERTOS (3A)','ORONULES (22)','GOLD NUGGET (23A)','NEUFINA (23)','MANDANOVA MANCO (14)','CULTIFORT (9A)'],
+    'POMELO': ['POMELO START RUBI']
+  },
+  'Lo Alegre': {
+    'LIMÓN': ['FINOS'],
+    'BRÓCOLI': ['BRÓCOLI'],
+    'MELÓN': ['MELÓN'],
+    'CALABAZA': ['CALABAZA']
+  }
+};
+
+// Superficies en hectáreas por variedad — null = sin cálculo de dosis
+const superficies = {
+  // La Pacheca
+  'La Pacheca': {
+    'VERNAS': 5.65,
+    'ORONULES (LP)': 2.38,
+    'NULESSIN (LP)': 3.10,
+    'INVERNADERO 1': 2.25,
+    'INVERNADERO 2': 2.40,
+    'INVERNADERO 3': 2.37,
+    'INVERNADERO 4': 1.90,
+    'INVERNADERO 5': 0.51,
+    'INVERNADEROS TODOS': 9.43
+  },
+  // La Carrasca
+  'La Carrasca': {
+    'FINOS': 7.00,
+    'GOLD NUGGET (SJ)': 1.00,
+    'INVERNADERO 1': 0.29,
+    'INVERNADERO 2': 0.47,
+    'INVERNADERO 3': 0.60,
+    'INVERNADERO 4': 0.57,
+    'INVERNADERO 5': 0.62,
+    'INVERNADERO 6': 0.75,
+    'INVERNADEROS TODOS': 3.30
+  },
+  // Los Luises
+  'Los Luises': {
+    'GRANADOS': 3.86,
+    'VALENCIA LATE (17)': 5.75,
+    'SOON Y RUBI (18)': 5.97,
+    'CLEMENULES (19)': 2.57,
+    'GOLD NUGGET (19)': 1.63,
+    'RUBI INVERNADEROS (20)': null,
+    'INJERTOS (3 + 3A)': null,
+    'RUBI INJERTOS (3)': null,
+    'SOON INJERTOS (3A)': null,
+    'PAQUITAS (19)': null,
+    'MANDANOVA MANCO (14)': null,
+    'CULTIFORT (9A)': null
+  },
+  // Los Llanos
+  'Los Llanos': {
+    'TANGO (16 + 16B)': 6.90,
+    'SOON Y RUBI (18)': 5.73,
+    'LORETINA': 2.55,
+    'ORONULES (22)': 1.59,
+    'GOLD NUGGET (23A)': 0.90,
+    'NEUFINA (23)': 0.85,
+    'MANDANOVA MANCO (14)': 2.82,
+    'CULTIFORT (9A)': 0.73,
+    'VIEJOS (15)': 2.90,
+    'CHAPARROS (7)': 1.46,
+    'NUEVOS MOLINERO (4)': 2.74,
+    'NUEVOS CONEJOS (8)': 1.98,
+    'NUEVOS CARRETERA (12N)': 1.66,
+    'LIMÓN ANTOLÍN (21)': 1.55,
+    'LIMÓN 2020 (12)': 0.99,
+    'POMELO START RUBI': 4.49,
+    'RUBI INVERNADEROS (20)': null,
+    'INJERTOS (3 + 3A)': null,
+    'RUBI INJERTOS (3)': null,
+    'SOON INJERTOS (3A)': null
+  },
+  // Lo Alegre
+  'Lo Alegre': {
+    'FINOS': 1.48,
+    'BRÓCOLI': null,
+    'MELÓN': null,
+    'CALABAZA': null
+  }
+};
+
+// Get total surface for selected variedades
+function getSuperficieTotal() {
+  if (!state.finca || state.variedades.length === 0) return null;
+  const fincaSup = superficies[state.finca];
+  if (!fincaSup) return null;
+  let total = 0;
+  let hasNull = false;
+  for (const v of state.variedades) {
+    const s = fincaSup[v];
+    if (s === null || s === undefined) { hasNull = true; continue; }
+    total += s;
+  }
+  return total > 0 ? total : null;
+}
+
+const state = {
+  aplicador: null,
+  tarea: null,
+  finca: null,
+  cultivos: [],    // multiple
+  variedades: []   // multiple
+};
+
+// Finca → Consejo regulador
+const fincaConsejo = {
+  'La Pacheca':  'CAERM',
+  'Los Luises':  'CVB',
+  'La Carrasca': 'CAERM',
+  'Los Llanos':  'CVB',
+  'Lo Alegre':   'CVB'
+};
+
+// Productos con restricciones específicas por consejo
+// Si un producto es eco:true en general pero un consejo lo restringe, se indica aquí
+// CAERM = Consejo Agroecológico de la Región de Murcia
+// CVB   = Consell Valencià de l'Agricultura Ecològica (Comunitat Valenciana)
+const consejoRestricciones = {
+  // Productos cuya autorización varía entre consejos (basado en listas vigentes CE 2018/848 + particularidades)
+  'Fosetil-Al':            { CAERM: false, CVB: false },   // no permitido en eco en ninguno
+  'Permanganato potásico': { CAERM: false, CVB: false },
+  'Espinosad':             { CAERM: true,  CVB: true  },   // permitido ambos (control insectos)
+  'Piretrinas':            { CAERM: true,  CVB: true  },
+  'Aceite de neem':        { CAERM: true,  CVB: true  },
+  'Azadiractina (Neem)':   { CAERM: true,  CVB: true  },
+  'Kaolin':                { CAERM: true,  CVB: true  },
+  'Tierra de diatomeas':   { CAERM: true,  CVB: true  },
+  'Jabón potásico':        { CAERM: true,  CVB: true  },
+  'Bicarbonato potásico':  { CAERM: true,  CVB: true  },
+  'Caldo bordelés':        { CAERM: true,  CVB: true  },
+  'Cobre (oxicloruro)':    { CAERM: true,  CVB: true  },
+  'Cobre (hidróxido)':     { CAERM: true,  CVB: true  },
+  'Cobre (sulfato)':       { CAERM: true,  CVB: true  },
+  'Hidróxido cúprico':     { CAERM: true,  CVB: true  },
+  'Óxido cuproso':         { CAERM: true,  CVB: true  },
+  'Azufre mojable':        { CAERM: true,  CVB: true  },
+  'Azufre polvo':          { CAERM: true,  CVB: true  },
+  'Bacillus subtilis':     { CAERM: true,  CVB: true  },
+  'Bacillus amyloliquefaciens': { CAERM: true, CVB: true },
+  'Beauveria bassiana':    { CAERM: true,  CVB: true  },
+  'Trichoderma harzianum': { CAERM: true,  CVB: true  },
+  'Trichoderma viride':    { CAERM: true,  CVB: true  },
+  'Extracto de algas':     { CAERM: true,  CVB: true  },
+  'Hierro quelatado EDDHA':{ CAERM: null,  CVB: null  },   // depende del quelante
+  'Hierro quelatado EDTA': { CAERM: false, CVB: false },   // EDTA no permitido en eco
+};
+
+function buildRadioGrid(containerId, items, stateKey) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  items.forEach(item => {
+    const lbl = document.createElement('label');
+    lbl.className = 'opt-label';
+    lbl.innerHTML = `<input type="radio" name="${stateKey}" value="${item}"><span class="dot"></span>${item}`;
+    lbl.addEventListener('click', () => {
+      state[stateKey] = item;
+      grid.querySelectorAll('.opt-label').forEach(l => l.classList.remove('checked'));
+      lbl.classList.add('checked');
+      document.getElementById('g-' + stateKey)?.classList.remove('field-error');
+      if (stateKey === 'finca') {
+        refreshAllEcoBadges();
+        updateCultivos();
+      }
+      if (stateKey === 'cultivo') {
+        updateVariedades();
+      }
+    });
+    grid.appendChild(lbl);
+  });
+}
+
+function updateCultivos() {
+  state.cultivos = [];
+  state.variedades = [];
+
+  const cultivos = state.finca ? Object.keys(fincaData[state.finca]) : [];
+  const grid = document.getElementById('cultivo-grid');
+  grid.innerHTML = '';
+
+  cultivos.forEach(item => {
+    const lbl = document.createElement('label');
+    lbl.className = 'opt-label';
+    lbl.innerHTML = `<input type="checkbox" name="cultivo" value="${item}"><span class="sq"></span>${item}`;
+    const cb = lbl.querySelector('input');
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        lbl.classList.add('checked');
+        if (!state.cultivos.includes(item)) state.cultivos.push(item);
+      } else {
+        lbl.classList.remove('checked');
+        state.cultivos = state.cultivos.filter(c => c !== item);
+      }
+      document.getElementById('g-cultivo')?.classList.remove('field-error');
+      updateVariedades();
+    });
+    grid.appendChild(lbl);
+  });
+
+  document.getElementById('variedad-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+  document.getElementById('g-cultivo')?.classList.remove('field-error');
+  document.getElementById('g-variedad')?.classList.remove('field-error');
+}
+
+function updateVariedades() {
+  state.variedades = [];
+  const grid = document.getElementById('variedad-grid');
+  grid.innerHTML = '';
+
+  if (!state.finca || state.cultivos.length === 0) {
+    grid.innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+    return;
+  }
+
+  // Gather all variedades from selected cultivos, avoiding duplicates
+  const todasVariedades = [];
+  state.cultivos.forEach(cultivo => {
+    const vars = fincaData[state.finca][cultivo] || [];
+    vars.forEach(v => {
+      if (!todasVariedades.includes(v)) todasVariedades.push(v);
+    });
+  });
+
+  // If multiple cultivos selected, group by cultivo
+  if (state.cultivos.length > 1) {
+    state.cultivos.forEach(cultivo => {
+      const vars = fincaData[state.finca][cultivo] || [];
+      if (vars.length === 0) return;
+
+      // Add cultivo label
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'grid-column:1/-1;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--green-mid);margin-top:0.5rem;padding-bottom:0.2rem;border-bottom:1px solid var(--border)';
+      lbl.textContent = cultivo;
+      grid.appendChild(lbl);
+
+      vars.forEach(v => addVariedadCheckbox(grid, v));
+    });
+  } else {
+    todasVariedades.forEach(v => addVariedadCheckbox(grid, v));
+  }
+
+  document.getElementById('g-variedad')?.classList.remove('field-error');
+}
+
+function addVariedadCheckbox(grid, item) {
+  const lbl = document.createElement('label');
+  lbl.className = 'opt-label';
+  lbl.innerHTML = `<input type="checkbox" name="variedad" value="${item}"><span class="sq"></span>${item}`;
+  const cb = lbl.querySelector('input');
+  cb.addEventListener('change', () => {
+    if (cb.checked) {
+      lbl.classList.add('checked');
+      if (!state.variedades.includes(item)) state.variedades.push(item);
+    } else {
+      lbl.classList.remove('checked');
+      state.variedades = state.variedades.filter(v => v !== item);
+    }
+    document.getElementById('g-variedad')?.classList.remove('field-error');
+  });
+  grid.appendChild(lbl);
+}
+
+// FITOSANITARIOS — eco: true = autorizado ecológico, false = NO autorizado, null = consultar
+const fitosanitarios = [
+  // Insecticidas / Acaricidas
+  {n:'Abamectina', eco:false},
+  {n:'Acetamiprid', eco:false},
+  {n:'Acrinatrina', eco:false},
+  {n:'Azadiractina (Neem)', eco:true},
+  {n:'Beauveria bassiana', eco:true},
+  {n:'Bifenazato', eco:false},
+  {n:'Cipermetrina', eco:false},
+  {n:'Clorantraniliprol', eco:false},
+  {n:'Clorpirifos', eco:false},
+  {n:'Deltametrina', eco:false},
+  {n:'Emamectina', eco:false},
+  {n:'Espinetoram', eco:false},
+  {n:'Espinosad', eco:true},
+  {n:'Etofenprox', eco:false},
+  {n:'Fenazaquin', eco:false},
+  {n:'Fenhexamid', eco:false},
+  {n:'Fenpiroximato', eco:false},
+  {n:'Flonicamid', eco:false},
+  {n:'Hexitiazox', eco:false},
+  {n:'Imidacloprid', eco:false},
+  {n:'Indoxacarb', eco:false},
+  {n:'Isaria fumosorosea', eco:true},
+  {n:'Lambda-cihalotrina', eco:false},
+  {n:'Lecanicillium muscarium', eco:true},
+  {n:'Lufenuron', eco:false},
+  {n:'Metiocarb', eco:false},
+  {n:'Metomil', eco:false},
+  {n:'Metarhizium anisopliae', eco:true},
+  {n:'Neonicotinoide (genérico)', eco:false},
+  {n:'Oxamil', eco:false},
+  {n:'Paecilomyces lilacinus', eco:true},
+  {n:'Pirimicarb', eco:false},
+  {n:'Piretrina natural', eco:true},
+  {n:'Rotenona', eco:true},
+  {n:'Spirotetramat', eco:false},
+  {n:'Tiacloprid', eco:false},
+  {n:'Tiametoxam', eco:false},
+  {n:'Trichoderma harzianum', eco:true},
+  {n:'Trichoderma viride', eco:true},
+  {n:'Verticillium lecanii', eco:true},
+  // Fungicidas
+  {n:'Acibenzolar-S-metil', eco:false},
+  {n:'Azoxistrobina', eco:false},
+  {n:'Bacillus amyloliquefaciens', eco:true},
+  {n:'Bacillus subtilis', eco:true},
+  {n:'Boscalid', eco:false},
+  {n:'Captan', eco:false},
+  {n:'Carbendazima', eco:false},
+  {n:'Ciproconazol', eco:false},
+  {n:'Cymoxanil', eco:false},
+  {n:'Difenoconazol', eco:false},
+  {n:'Dimetomorf', eco:false},
+  {n:'Fenarimol', eco:false},
+  {n:'Fenpropidin', eco:false},
+  {n:'Fluazinam', eco:false},
+  {n:'Fludioxonil', eco:false},
+  {n:'Fluopiram', eco:false},
+  {n:'Flutriafol', eco:false},
+  {n:'Fosetil-Al', eco:false},
+  {n:'Iprodiona', eco:false},
+  {n:'Kresoxim-metil', eco:false},
+  {n:'Mandipropamid', eco:false},
+  {n:'Mancozeb', eco:false},
+  {n:'Metalaxil-M', eco:false},
+  {n:'Metiram', eco:false},
+  {n:'Miclobutanil', eco:false},
+  {n:'Penconazol', eco:false},
+  {n:'Piraclostrobina', eco:false},
+  {n:'Pirimetanil', eco:false},
+  {n:'Procimidona', eco:false},
+  {n:'Propamocarb', eco:false},
+  {n:'Propineb', eco:false},
+  {n:'Propizamida', eco:false},
+  {n:'Proquinazid', eco:false},
+  {n:'Tebuconazol', eco:false},
+  {n:'Tiofanato metilo', eco:false},
+  {n:'Tiram', eco:false},
+  {n:'Triadimenol', eco:false},
+  {n:'Trifloxistrobina', eco:false},
+  {n:'Triflumizol', eco:false},
+  {n:'Vinclozolina', eco:false},
+  {n:'Ziram', eco:false},
+  // Herbicidas
+  {n:'Glifosato', eco:false},
+  {n:'Glufosinato amónico', eco:false},
+  {n:'Pendimetalina', eco:false},
+  {n:'Oxifluorfen', eco:false},
+  {n:'Flazasulfuron', eco:false},
+  {n:'Dicuat', eco:false},
+  {n:'2,4-D', eco:false},
+  {n:'Terbutilazina', eco:false},
+  // Cobre y azufre
+  {n:'Azufre mojable', eco:true},
+  {n:'Azufre polvo', eco:true},
+  {n:'Caldo bordelés', eco:true},
+  {n:'Cobre (hidróxido)', eco:true},
+  {n:'Cobre (oxicloruro)', eco:true},
+  {n:'Cobre (sulfato)', eco:true},
+  {n:'Hidróxido cúprico', eco:true},
+  {n:'Óxido cuproso', eco:true},
+  // Productos ecológicos / bioestimulantes
+  {n:'Aceite de neem', eco:true},
+  {n:'Aceite de parafina', eco:true},
+  {n:'Ácido giberélico', eco:null},
+  {n:'Auxinas', eco:null},
+  {n:'Bicarbonato potásico', eco:true},
+  {n:'Citoquininas', eco:null},
+  {n:'Extracto de algas', eco:true},
+  {n:'Extracto de ajo', eco:true},
+  {n:'Jabón potásico', eco:true},
+  {n:'Kaolin', eco:true},
+  {n:'Lecitina de soja', eco:true},
+  {n:'Micronutrientes', eco:null},
+  {n:'Permanganato potásico', eco:false},
+  {n:'Piretrinas', eco:true},
+  {n:'Quinosol', eco:false},
+  {n:'Regulador de crecimiento', eco:null},
+  {n:'Silicio', eco:true},
+  {n:'SIN (sustancias inertes naturales)', eco:true},
+  {n:'Tierra de diatomeas', eco:true},
+  // Fertilizantes foliares
+  {n:'Aminoácidos foliares', eco:true},
+  {n:'Boro foliar', eco:null},
+  {n:'Calcio foliar', eco:null},
+  {n:'Fertilizante foliar NPK', eco:null},
+  {n:'Hierro quelatado EDDHA', eco:null},
+  {n:'Hierro quelatado EDTA', eco:false},
+  {n:'Magnesio foliar', eco:null},
+  {n:'Manganeso foliar', eco:null},
+  {n:'Molibdeno foliar', eco:null},
+  {n:'Zinc foliar', eco:null},
+  {n:'Potasio foliar', eco:null},
+].sort((a,b) => a.n.localeCompare(b.n));
+
+const ecoSet = new Set(fitosanitarios.filter(f => f.eco === true).map(f => f.n.toLowerCase()));
+const noEcoSet = new Set(fitosanitarios.filter(f => f.eco === false).map(f => f.n.toLowerCase()));
+
+function getEcoStatus(name) {
+  const key = name.trim();
+  const keyLower = key.toLowerCase();
+  const consejo = state.finca ? fincaConsejo[state.finca] : null;
+
+  // First look up in fitosanitarios list (loaded from Supabase)
+  const found = fitosanitarios.find(f => f.n.toLowerCase() === keyLower);
+  if (found) {
+    let ecoVal;
+    if (consejo === 'CAERM') {
+      ecoVal = found.eco_caerm !== undefined ? found.eco_caerm : found.eco;
+    } else if (consejo === 'CVB') {
+      ecoVal = found.eco_cvb !== undefined ? found.eco_cvb : found.eco;
+    } else {
+      ecoVal = found.eco;
+    }
+    if (ecoVal === true) return 'ok';
+    if (ecoVal === false) return 'warn';
+    return 'unknown';
+  }
+
+  // Fall back to consejo-specific overrides
+  if (consejo && consejoRestricciones[key] !== undefined) {
+    const val = consejoRestricciones[key][consejo];
+    if (val === true) return 'ok';
+    if (val === false) return 'warn';
+    return 'unknown';
+  }
+
+  // Last resort: general eco sets
+  if (ecoSet.has(keyLower)) return 'ok';
+  if (noEcoSet.has(keyLower)) return 'warn';
+  return 'unknown';
+}
+
+function consejoLabel() {
+  if (!state.finca) return '';
+  const c = fincaConsejo[state.finca];
+  return c === 'CAERM' ? ' · CAERM Murcia' : ' · CVB Valencia';
+}
+
+function showEcoBadge(badgeEl, name) {
+  if (!name.trim()) { badgeEl.className = 'eco-badge'; badgeEl.textContent = ''; return; }
+  const st = getEcoStatus(name);
+  const cl = consejoLabel();
+  if (st === 'ok') {
+    badgeEl.className = 'eco-badge eco-ok';
+    badgeEl.innerHTML = `🌿 Autorizado en ecológico${cl}`;
+  } else if (st === 'warn') {
+    badgeEl.className = 'eco-badge eco-warn';
+    badgeEl.innerHTML = `⚠️ NO autorizado en ecológico${cl}`;
+  } else {
+    badgeEl.className = 'eco-badge eco-unknown';
+    badgeEl.innerHTML = `❓ Verificar con ${cl ? cl.slice(3) : 'el consejo regulador'}`;
+  }
+}
+
+function refreshAllEcoBadges() {
+  // Update consejo banner
+  const banner = document.getElementById('consejo-banner');
+  if (state.finca && fincaConsejo[state.finca]) {
+    const c = fincaConsejo[state.finca];
+    const label = c === 'CAERM'
+      ? '🏛️ Consejo regulador: CAERM — Región de Murcia'
+      : '🏛️ Consejo regulador: CVB — Comunitat Valenciana';
+    const color = c === 'CAERM'
+      ? 'background:rgba(74,140,63,0.1);color:#2d5a27;border:1px solid rgba(74,140,63,0.3)'
+      : 'background:rgba(196,162,101,0.15);color:#8a6a2a;border:1px solid rgba(196,162,101,0.4)';
+    banner.style.cssText = color + ';display:block;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;margin-bottom:1rem';
+    banner.innerHTML = label;
+  } else {
+    banner.style.display = 'none';
+  }
+  // Refresh product badges
+  for (let i = 1; i <= 5; i++) {
+    const input = document.getElementById('producto' + i);
+    const badge = document.getElementById('eco-badge-' + i);
+    if (input && badge && input.value.trim()) showEcoBadge(badge, input.value);
+  }
+}
+
+function buildAutocomplete(input, listEl, badgeEl) {
+  let activeIdx = -1;
+
+  const update = () => {
+    const val = input.value.trim().toLowerCase();
+    activeIdx = -1;
+    if (!val) { listEl.innerHTML = ''; listEl.classList.remove('open'); badgeEl.className = 'eco-badge'; return; }
+
+    const matches = fitosanitarios.filter(p => p.n.toLowerCase().includes(val)).slice(0, 14);
+    if (!matches.length) {
+      listEl.innerHTML = `<div class="autocomplete-empty">Sin resultados — puedes escribir el nombre directamente</div>`;
+      listEl.classList.add('open');
+      showEcoBadge(badgeEl, input.value);
+      return;
+    }
+    listEl.innerHTML = matches.map(m => {
+      const re = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+      const hl = m.n.replace(re, '<mark>$1</mark>');
+      const dot = m.eco === true ? '<span class="eco-dot ok" title="Autorizado ecológico"></span>'
+                : m.eco === false ? '<span class="eco-dot warn" title="No autorizado ecológico"></span>'
+                : '';
+      return `<div class="autocomplete-item" data-val="${m.n}" style="display:flex;align-items:center;gap:0.4rem">${hl}${dot}</div>`;
+    }).join('');
+    listEl.classList.add('open');
+
+    listEl.querySelectorAll('.autocomplete-item').forEach(item => {
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        input.value = item.dataset.val;
+        listEl.innerHTML = ''; listEl.classList.remove('open');
+        showEcoBadge(badgeEl, input.value);
+      });
+    });
+  };
+
+  input.addEventListener('input', update);
+
+  input.addEventListener('change', () => showEcoBadge(badgeEl, input.value));
+
+  input.addEventListener('keydown', e => {
+    const items = listEl.querySelectorAll('.autocomplete-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIdx = Math.min(activeIdx + 1, items.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIdx = Math.max(activeIdx - 1, 0);
+    } else if (e.key === 'Enter' && activeIdx >= 0) {
+      e.preventDefault();
+      input.value = items[activeIdx].dataset.val;
+      listEl.innerHTML = ''; listEl.classList.remove('open');
+      showEcoBadge(badgeEl, input.value);
+      return;
+    } else if (e.key === 'Escape') {
+      listEl.innerHTML = ''; listEl.classList.remove('open');
+      return;
+    }
+    items.forEach((it, i) => it.classList.toggle('active', i === activeIdx));
+    if (activeIdx >= 0) items[activeIdx].scrollIntoView({ block: 'nearest' });
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => { listEl.innerHTML = ''; listEl.classList.remove('open'); showEcoBadge(badgeEl, input.value); }, 150);
+  });
+}
+
+function buildProducts() {
+  const c = document.getElementById('productos-container');
+  c.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const req = i === 1 ? ` <span class="req">*</span>` : '';
+    const div = document.createElement('div');
+    div.className = 'product-row';
+    div.innerHTML = `
+      <div>
+        <div class="product-num">${String(i).padStart(2,'0')}</div>
+        <div class="product-inputs">
+          <div class="field-group" id="g-producto${i}">
+            <label>Producto${req}</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="producto${i}" name="producto${i}" placeholder="Buscar producto..." autocomplete="off">
+              <div class="autocomplete-list" id="ac-list-${i}"></div>
+            </div>
+            <div class="eco-badge" id="eco-badge-${i}"></div>
+            <div class="error-msg">Campo requerido.</div>
+          </div>
+          <div class="field-group" id="g-cantidad${i}">
+            <label>Cantidad (L/Kg)${req}</label>
+            <input type="number" id="cantidad${i}" name="cantidad${i}" placeholder="0.00" min="0" step="0.01">
+            <div class="error-msg">Campo requerido.</div>
+          </div>
+        </div>
+      </div>`;
+    c.appendChild(div);
+  }
+  for (let i = 1; i <= 5; i++) {
+    buildAutocomplete(
+      document.getElementById('producto' + i),
+      document.getElementById('ac-list-' + i),
+      document.getElementById('eco-badge-' + i)
+    );
+  }
+}
+
+// Init
+buildRadioGrid('aplicador-grid', aplicadores, 'aplicador');
+buildRadioGrid('tarea-grid', tareas, 'tarea');
+buildRadioGrid('finca-grid', fincas, 'finca');
+
+// Cultivo y variedad empiezan vacíos, se rellenan al elegir finca/cultivo
+document.getElementById('cultivo-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero una finca</div>';
+document.getElementById('variedad-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+// buildProducts() is called after DB load below
+
+// Set today's date
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('fecha').value = today;
+
+// Validation
+function validateForm() {
+  let valid = true;
+
+  // Fecha
+  const gFecha = document.getElementById('g-fecha');
+  if (!document.getElementById('fecha').value) {
+    gFecha.classList.add('field-error'); valid = false;
+  } else { gFecha.classList.remove('field-error'); }
+
+  // Radio fields
+  ['aplicador','finca'].forEach(key => {
+    const g = document.getElementById('g-' + key);
+    if (!state[key]) { g.classList.add('field-error'); valid = false; }
+    else { g.classList.remove('field-error'); }
+  });
+
+  // Multi-select fields
+  const gCultivo = document.getElementById('g-cultivo');
+  if (!state.cultivos || state.cultivos.length === 0) { gCultivo.classList.add('field-error'); valid = false; }
+  else { gCultivo.classList.remove('field-error'); }
+
+  const gVariedad = document.getElementById('g-variedad');
+  if (!state.variedades || state.variedades.length === 0) { gVariedad.classList.add('field-error'); valid = false; }
+  else { gVariedad.classList.remove('field-error'); }
+
+  // Agua
+  const gAgua = document.getElementById('g-agua');
+  if (!document.getElementById('agua').value) {
+    gAgua.classList.add('field-error'); valid = false;
+  } else { gAgua.classList.remove('field-error'); }
+
+  // Horas
+  const gHoras = document.getElementById('g-horas');
+  if (!document.getElementById('horas').value) {
+    gHoras.classList.add('field-error'); valid = false;
+  } else { gHoras.classList.remove('field-error'); }
+
+  // Producto 1 y Cantidad 1
+  const gP1 = document.getElementById('g-producto1');
+  if (!document.getElementById('producto1').value.trim()) {
+    gP1.classList.add('field-error'); valid = false;
+  } else { gP1.classList.remove('field-error'); }
+
+  const gC1 = document.getElementById('g-cantidad1');
+  if (!document.getElementById('cantidad1').value) {
+    gC1.classList.add('field-error'); valid = false;
+  } else { gC1.classList.remove('field-error'); }
+
+  return valid;
+}
+
+function exportToExcel() {
+  const fecha = document.getElementById('fecha').value;
+
+  // Build row data
+  const row = {
+    'FECHA': fecha,
+    'APLICADOR': state.aplicador || '',
+    'TAREA': state.tarea || '',
+    'FINCA': state.finca || '',
+    'CULTIVO': state.cultivo || '',
+    'VARIEDAD': state.variedad || '',
+    'AGUA (L)': document.getElementById('agua').value,
+    'HORAS': document.getElementById('horas').value,
+  };
+
+  for (let i = 1; i <= 5; i++) {
+    const prod = document.getElementById('producto' + i).value.trim();
+    const cant = document.getElementById('cantidad' + i).value;
+    if (prod || cant) {
+      row['PRODUCTO ' + i] = prod;
+      row['CANTIDAD ' + i + ' (L/Kg)'] = cant ? parseFloat(cant) : '';
+    } else {
+      row['PRODUCTO ' + i] = '';
+      row['CANTIDAD ' + i + ' (L/Kg)'] = '';
+    }
+  }
+
+  const ws = XLSX.utils.json_to_sheet([row]);
+
+  // Column widths
+  ws['!cols'] = Object.keys(row).map(k => ({ wch: Math.max(k.length, 16) }));
+
+  // Header style
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (!ws[addr]) continue;
+    ws[addr].s = {
+      font: { bold: true, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '2D5A27' } },
+      alignment: { horizontal: 'center' }
+    };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Parte');
+
+  const filename = `parte_${fecha}_${(state.aplicador || 'sin_aplicador').toLowerCase().replace(/\s/g,'_')}.xlsx`;
+  XLSX.writeFile(wb, filename);
+}
+
+// =============================================
+// SUPABASE CONFIG
+// =============================================
+const SUPABASE_URL = 'https://jecqfntpvzwipjcleqbl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3FmbnRwdnp3aXBqY2xlcWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzE2NjIsImV4cCI6MjA5MDQ0NzY2Mn0.J26k1VElLscwOxhGTBXpyw-OnXZ-BZOiBW5vCG3CreI';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyjwG9ZcK-zVPI1CEFeb3Sfcc5Hh0qUTM8R4FyrdYMAWNJ3VE-A9M5sRawT0W1qjak/exec';
+
+async function sbFetch(endpoint, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+      ...options.headers
+    }
+  });
+  return res;
+}
+
+// Load products from Supabase on startup
+async function loadProductosFromDB() {
+  try {
+    const res = await sbFetch('productos?activo=eq.true&order=nombre_comercial.asc&select=nombre_comercial,materia_activa,eco_caerm,eco_cvb,dosis_maxima,plazo_seguridad');
+    if (!res.ok) throw new Error('Error cargando productos');
+    const data = await res.json();
+    if (data && data.length > 0) {
+      // Replace the hardcoded list with DB data
+      fitosanitarios.length = 0;
+      data.forEach(p => {
+        const ecoVal = state.finca
+          ? (fincaConsejo[state.finca] === 'CAERM' ? p.eco_caerm : p.eco_cvb)
+          : null;
+        fitosanitarios.push({
+          n: p.nombre_comercial,
+          ma: p.materia_activa || '',
+          eco: ecoVal,
+          eco_caerm: p.eco_caerm,
+          eco_cvb: p.eco_cvb,
+          dosis: p.dosis_maxima,
+          plazo: p.plazo_seguridad
+        });
+      });
+      fitosanitarios.sort((a,b) => a.n.localeCompare(b.n));
+      console.log(`✅ ${fitosanitarios.length} productos cargados desde Supabase`);
+    }
+  } catch(e) {
+    console.warn('⚠️ No se pudieron cargar productos desde Supabase, usando lista local:', e);
+  }
+}
+
+async function saveParteToSupabase(parte) {
+  try {
+    const res = await sbFetch('partes', {
+      method: 'POST',
+      body: JSON.stringify(parte)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('Error guardando parte:', err);
+      return false;
+    }
+    return true;
+  } catch(e) {
+    console.error('Error de conexión:', e);
+    return false;
+  }
+}
+
+async function saveToSheets(parte) {
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parte)
+    });
+    return true;
+  } catch(e) {
+    console.error('Error enviando a Sheets:', e);
+    return false;
+  }
+}
+
+// Global parte object to share between review and send
+let parteData = null;
+
+function buildParteData() {
+  const productos = [];
+  for (let i = 1; i <= 5; i++) {
+    const prod = document.getElementById('producto' + i).value.trim();
+    const cant = parseFloat(document.getElementById('cantidad' + i).value) || null;
+    productos.push({ prod, cant });
+  }
+  const agua = parseFloat(document.getElementById('agua').value) || 0;
+  const consejo = state.finca ? fincaConsejo[state.finca] : null;
+  const superficie = getSuperficieTotal();
+
+  const alertas = productos.map(({prod, cant}) => {
+    if (!prod || !cant || !agua) return false;
+    const found = fitosanitarios.find(f => f.n.toLowerCase() === prod.toLowerCase());
+    if (!found || !found.dosis) return false;
+    return (cant / agua) * 100 > found.dosis;
+  });
+
+  const ecoAlertas = productos.map(({prod}) => {
+    if (!prod) return null;
+    const found = fitosanitarios.find(f => f.n.toLowerCase() === prod.toLowerCase());
+    if (!found) return 'unknown';
+    const ecoVal = consejo === 'CAERM' ? found.eco_caerm : consejo === 'CVB' ? found.eco_cvb : found.eco;
+    if (ecoVal === true) return 'ok';
+    if (ecoVal === false) return 'warn';
+    return 'unknown';
+  });
+
+  const tieneEcoAlerta = ecoAlertas.some(e => e === 'warn');
+  const tieneVerificar = ecoAlertas.some(e => e === 'unknown');
+
+  return {
+    fecha: document.getElementById('fecha').value,
+    aplicadores: [state.aplicador],
+    tarea: state.tarea,
+    finca: state.finca,
+    consejo: consejo || '',
+    cultivo: state.cultivos.join(', '),
+    variedad: state.variedades.join(', '),
+    agua: agua || null,
+    horas: parseFloat(document.getElementById('horas').value) || null,
+    comentarios: document.getElementById('comentarios').value.trim() || null,
+    producto1: productos[0].prod || null, cantidad1: productos[0].cant, dosis_alerta1: alertas[0], eco_alerta1: ecoAlertas[0],
+    producto2: productos[1].prod || null, cantidad2: productos[1].cant, dosis_alerta2: alertas[1], eco_alerta2: ecoAlertas[1],
+    producto3: productos[2].prod || null, cantidad3: productos[2].cant, dosis_alerta3: alertas[2], eco_alerta3: ecoAlertas[2],
+    producto4: productos[3].prod || null, cantidad4: productos[3].cant, dosis_alerta4: alertas[3], eco_alerta4: ecoAlertas[3],
+    producto5: productos[4].prod || null, cantidad5: productos[4].cant, dosis_alerta5: alertas[4], eco_alerta5: ecoAlertas[4],
+    tiene_alertas: alertas.some(Boolean) || tieneEcoAlerta,
+    tiene_eco_alerta: tieneEcoAlerta,
+    tiene_verificar: tieneVerificar,
+    _alertas: alertas,
+    _ecoAlertas: ecoAlertas
+  };
+}
+
+function showReview(parte) {
+  const ecoIcon = (val) => {
+    if (val === 'ok') return '🌿';
+    if (val === 'warn') return '🚫';
+    if (val === 'unknown') return '❓';
+    return '';
+  };
+  const dosisIcon = (val) => val ? '⚠️ Dosis alta' : '✅';
+
+  let html = `
+    <div style="display:grid;gap:0.4rem">
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div>📅 <strong>Fecha:</strong> ${parte.fecha}</div>
+        <div>👤 <strong>Aplicador:</strong> ${parte.aplicadores[0]}</div>
+        <div>⚙️ <strong>Tarea:</strong> ${parte.tarea || '—'}</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div>🌾 <strong>Finca:</strong> ${parte.finca} · <span style="font-size:0.78rem;opacity:0.7">${parte.consejo}</span></div>
+        <div>🌿 <strong>Cultivo:</strong> ${parte.cultivo}</div>
+        <div>📍 <strong>Variedad:</strong> ${parte.variedad}</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div>💧 <strong>Agua:</strong> ${parte.agua || '—'} L &nbsp;·&nbsp; ⏱️ <strong>Horas:</strong> ${parte.horas || '—'}</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div style="font-weight:700;margin-bottom:0.3rem">🧪 Productos:</div>`;
+
+  const prods = [
+    {p: parte.producto1, c: parte.cantidad1, d: parte._alertas[0], e: parte._ecoAlertas[0]},
+    {p: parte.producto2, c: parte.cantidad2, d: parte._alertas[1], e: parte._ecoAlertas[1]},
+    {p: parte.producto3, c: parte.cantidad3, d: parte._alertas[2], e: parte._ecoAlertas[2]},
+    {p: parte.producto4, c: parte.cantidad4, d: parte._alertas[3], e: parte._ecoAlertas[3]},
+    {p: parte.producto5, c: parte.cantidad5, d: parte._alertas[4], e: parte._ecoAlertas[4]},
+  ].filter(x => x.p);
+
+  prods.forEach(({p, c, d, e}) => {
+    html += `<div style="padding:0.2rem 0;border-bottom:1px dashed var(--border)">
+      • <strong>${p}</strong> · ${c || '—'} L/Kg &nbsp; ${dosisIcon(d)} &nbsp; ${ecoIcon(e)}
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  if (parte.comentarios) {
+    html += `<div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+      💬 <strong>Observaciones:</strong> ${parte.comentarios}
+    </div>`;
+  }
+
+  if (parte.tiene_eco_alerta || parte.tiene_alertas) {
+    html += `<div style="background:#fff3cd;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.82rem;color:#8a6a2a">
+      ⚠️ Este parte tiene alertas. Revisa los productos antes de confirmar.
+    </div>`;
+  }
+
+  html += `</div>`;
+
+  document.getElementById('review-content').innerHTML = html;
+  document.getElementById('reviewOverlay').classList.add('show');
+}
+
+function closeReview() {
+  document.getElementById('reviewOverlay').classList.remove('show');
+  parteData = null;
+}
+
+async function confirmAndSend() {
+  if (!parteData) return;
+  const btn = document.getElementById('btn-confirm');
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+
+  const [savedDB, savedSheets] = await Promise.all([
+    saveParteToSupabase(parteData),
+    saveToSheets(parteData)
+  ]);
+
+  btn.textContent = '✅ Confirmar y Enviar';
+  btn.disabled = false;
+  document.getElementById('reviewOverlay').classList.remove('show');
+
+  const msg = document.querySelector('.success-box p');
+  msg.textContent = savedDB
+    ? '✅ Parte enviado y guardado correctamente.'
+    : '⚠️ Parte enviado pero hubo un problema al guardar. Contacta con la oficina.';
+
+  document.getElementById('successOverlay').classList.add('show');
+  parteData = null;
+}
+
+document.getElementById('mainForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!validateForm()) {
+    const firstError = document.querySelector('.field-error');
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  parteData = buildParteData();
+  showReview(parteData);
+});
+
+// Init: load products from DB then build form
+loadProductosFromDB().then(() => {
+  buildProducts();
+});
+
+function clearForm() {
+  if (!confirm('¿Seguro que quieres limpiar el formulario?')) return;
+  document.getElementById('mainForm').reset();
+  state.aplicador = null;
+  state.tarea = null;
+  state.finca = null;
+  state.cultivos = [];
+  state.variedades = [];
+  document.querySelectorAll('.opt-label').forEach(l => l.classList.remove('checked'));
+  document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
+  document.getElementById('fecha').value = today;
+  document.getElementById('cultivo-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero una finca</div>';
+  document.getElementById('variedad-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+  document.querySelectorAll('.eco-badge').forEach(b => { b.className = 'eco-badge'; b.textContent = ''; });
+  document.getElementById('consejo-banner').style.display = 'none';
+}
+
+function newForm() {
+  document.getElementById('successOverlay').classList.remove('show');
+  document.getElementById('reviewOverlay').classList.remove('show');
+  parteData = null;
+  clearForm();
+}
+</script>
+</body>
+</html>
