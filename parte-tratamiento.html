@@ -1363,10 +1363,12 @@ async function loadProductosFromDB() {
 }
 
 async function saveParteToSupabase(parte) {
+  // Remove internal fields not in DB
+  const { _alertas, _ecoAlertas, ...parteDB } = parte;
   try {
     const res = await sbFetch('partes', {
       method: 'POST',
-      body: JSON.stringify(parte)
+      body: JSON.stringify(parteDB)
     });
     if (!res.ok) {
       const err = await res.text();
