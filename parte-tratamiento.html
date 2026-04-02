@@ -553,12 +553,27 @@
   </form>
 </div>
 
+<!-- Review overlay -->
+<div class="success-overlay" id="reviewOverlay">
+  <div class="success-box" style="max-width:420px;width:95%;max-height:85vh;overflow-y:auto;text-align:left;padding:1.5rem">
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:0.75rem">
+      <span style="font-size:1.4rem">📋</span>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.05em;color:var(--green-dark)">Resumen del Parte</h2>
+    </div>
+    <div id="review-content" style="font-size:0.88rem;color:var(--text-dark);line-height:1.8"></div>
+    <div style="display:flex;gap:0.75rem;margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem">
+      <button onclick="closeReview()" style="flex:1;padding:0.75rem;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;color:var(--text-mid)">✏️ Modificar</button>
+      <button onclick="confirmAndSend()" id="btn-confirm" style="flex:1.5;padding:0.75rem;background:var(--green-dark);color:white;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.08em;cursor:pointer">✅ Confirmar y Enviar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Success -->
 <div class="success-overlay" id="successOverlay">
   <div class="success-box">
     <div class="success-icon">✅</div>
     <h2>Parte Enviado</h2>
-    <p>El parte ha sido registrado y el Excel se ha descargado automáticamente.</p>
+    <p>El parte ha sido registrado correctamente.</p>
     <button class="btn-new" onclick="newForm()">Nuevo Parte</button>
   </div>
 </div>
@@ -1380,20 +1395,10 @@ async function saveToSheets(parte) {
   }
 }
 
-document.getElementById('mainForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  if (!validateForm()) {
-    const firstError = document.querySelector('.field-error');
-    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
+// Global parte object to share between review and send
+let parteData = null;
 
-  // Show loading state
-  const btn = document.querySelector('.btn-submit');
-  btn.textContent = 'Enviando...';
-  btn.disabled = true;
-
-  // Build parte object
+function buildParteData() {
   const productos = [];
   for (let i = 1; i <= 5; i++) {
     const prod = document.getElementById('producto' + i).value.trim();
@@ -1402,15 +1407,13 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   }
   const agua = parseFloat(document.getElementById('agua').value) || 0;
   const consejo = state.finca ? fincaConsejo[state.finca] : null;
-  const superficie = getSuperficieTotal(); // in ha, null if not available
+  const superficie = getSuperficieTotal();
 
   const alertas = productos.map(({prod, cant}) => {
     if (!prod || !cant || !agua) return false;
     const found = fitosanitarios.find(f => f.n.toLowerCase() === prod.toLowerCase());
     if (!found || !found.dosis) return false;
-    // dosis_maxima is ml/100L — check if cantidad/agua*100 > dosis_maxima
-    const dosisReal = (cant / agua) * 100;
-    return dosisReal > found.dosis;
+    return (cant / agua) * 100 > found.dosis;
   });
 
   const ecoAlertas = productos.map(({prod}) => {
@@ -1426,7 +1429,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   const tieneEcoAlerta = ecoAlertas.some(e => e === 'warn');
   const tieneVerificar = ecoAlertas.some(e => e === 'unknown');
 
-  const parte = {
+  return {
     fecha: document.getElementById('fecha').value,
     aplicadores: [state.aplicador],
     tarea: state.tarea,
@@ -1444,25 +1447,111 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     producto5: productos[4].prod || null, cantidad5: productos[4].cant, dosis_alerta5: alertas[4], eco_alerta5: ecoAlertas[4],
     tiene_alertas: alertas.some(Boolean) || tieneEcoAlerta,
     tiene_eco_alerta: tieneEcoAlerta,
-    tiene_verificar: tieneVerificar
+    tiene_verificar: tieneVerificar,
+    _alertas: alertas,
+    _ecoAlertas: ecoAlertas
   };
+}
 
-  // Send to both Supabase and Sheets in parallel
-  const [savedDB, savedSheets] = await Promise.all([
-    saveParteToSupabase(parte),
-    saveToSheets(parte)
-  ]);
+function showReview(parte) {
+  const ecoIcon = (val) => {
+    if (val === 'ok') return '🌿';
+    if (val === 'warn') return '🚫';
+    if (val === 'unknown') return '❓';
+    return '';
+  };
+  const dosisIcon = (val) => val ? '⚠️ Dosis alta' : '✅';
 
-  const msg = document.querySelector('.success-box p');
-  if (savedDB) {
-    msg.textContent = '✅ Parte enviado y guardado correctamente.';
-  } else {
-    msg.textContent = '⚠️ Parte enviado pero hubo un problema al guardar. Contacta con la oficina.';
+  let html = `
+    <div style="display:grid;gap:0.4rem">
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div>📅 <strong>Fecha:</strong> ${parte.fecha}</div>
+        <div>👤 <strong>Aplicador:</strong> ${parte.aplicadores[0]}</div>
+        <div>⚙️ <strong>Tarea:</strong> ${parte.tarea || '—'}</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div>🌾 <strong>Finca:</strong> ${parte.finca} · <span style="font-size:0.78rem;opacity:0.7">${parte.consejo}</span></div>
+        <div>🌿 <strong>Cultivo:</strong> ${parte.cultivo}</div>
+        <div>📍 <strong>Variedad:</strong> ${parte.variedad}</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div>💧 <strong>Agua:</strong> ${parte.agua || '—'} L &nbsp;·&nbsp; ⏱️ <strong>Horas:</strong> ${parte.horas || '—'}</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+        <div style="font-weight:700;margin-bottom:0.3rem">🧪 Productos:</div>`;
+
+  const prods = [
+    {p: parte.producto1, c: parte.cantidad1, d: parte._alertas[0], e: parte._ecoAlertas[0]},
+    {p: parte.producto2, c: parte.cantidad2, d: parte._alertas[1], e: parte._ecoAlertas[1]},
+    {p: parte.producto3, c: parte.cantidad3, d: parte._alertas[2], e: parte._ecoAlertas[2]},
+    {p: parte.producto4, c: parte.cantidad4, d: parte._alertas[3], e: parte._ecoAlertas[3]},
+    {p: parte.producto5, c: parte.cantidad5, d: parte._alertas[4], e: parte._ecoAlertas[4]},
+  ].filter(x => x.p);
+
+  prods.forEach(({p, c, d, e}) => {
+    html += `<div style="padding:0.2rem 0;border-bottom:1px dashed var(--border)">
+      • <strong>${p}</strong> · ${c || '—'} L/Kg &nbsp; ${dosisIcon(d)} &nbsp; ${ecoIcon(e)}
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  if (parte.comentarios) {
+    html += `<div style="background:var(--cream);border-radius:8px;padding:0.6rem 0.8rem">
+      💬 <strong>Observaciones:</strong> ${parte.comentarios}
+    </div>`;
   }
 
-  btn.textContent = 'Enviar Parte';
+  if (parte.tiene_eco_alerta || parte.tiene_alertas) {
+    html += `<div style="background:#fff3cd;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.82rem;color:#8a6a2a">
+      ⚠️ Este parte tiene alertas. Revisa los productos antes de confirmar.
+    </div>`;
+  }
+
+  html += `</div>`;
+
+  document.getElementById('review-content').innerHTML = html;
+  document.getElementById('reviewOverlay').classList.add('show');
+}
+
+function closeReview() {
+  document.getElementById('reviewOverlay').classList.remove('show');
+  parteData = null;
+}
+
+async function confirmAndSend() {
+  if (!parteData) return;
+  const btn = document.getElementById('btn-confirm');
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+
+  const [savedDB, savedSheets] = await Promise.all([
+    saveParteToSupabase(parteData),
+    saveToSheets(parteData)
+  ]);
+
+  btn.textContent = '✅ Confirmar y Enviar';
   btn.disabled = false;
+  document.getElementById('reviewOverlay').classList.remove('show');
+
+  const msg = document.querySelector('.success-box p');
+  msg.textContent = savedDB
+    ? '✅ Parte enviado y guardado correctamente.'
+    : '⚠️ Parte enviado pero hubo un problema al guardar. Contacta con la oficina.';
+
   document.getElementById('successOverlay').classList.add('show');
+  parteData = null;
+}
+
+document.getElementById('mainForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!validateForm()) {
+    const firstError = document.querySelector('.field-error');
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  parteData = buildParteData();
+  showReview(parteData);
 });
 
 // Init: load products from DB then build form
@@ -1489,6 +1578,8 @@ function clearForm() {
 
 function newForm() {
   document.getElementById('successOverlay').classList.remove('show');
+  document.getElementById('reviewOverlay').classList.remove('show');
+  parteData = null;
   clearForm();
 }
 </script>
