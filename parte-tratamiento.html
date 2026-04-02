@@ -1071,7 +1071,7 @@ function refreshAllEcoBadges() {
     banner.style.display = 'none';
   }
   // Refresh product badges
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const input = document.getElementById('producto' + i);
     const badge = document.getElementById('eco-badge-' + i);
     if (input && badge && input.value.trim()) showEcoBadge(badge, input.value);
@@ -1148,7 +1148,7 @@ function buildAutocomplete(input, listEl, badgeEl) {
 function buildProducts() {
   const c = document.getElementById('productos-container');
   c.innerHTML = '';
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const req = i === 1 ? ` <span class="req">*</span>` : '';
     const div = document.createElement('div');
     div.className = 'product-row';
@@ -1305,7 +1305,7 @@ function exportToExcel() {
 // =============================================
 const SUPABASE_URL = 'https://jecqfntpvzwipjcleqbl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3FmbnRwdnp3aXBqY2xlcWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzE2NjIsImV4cCI6MjA5MDQ0NzY2Mn0.J26k1VElLscwOxhGTBXpyw-OnXZ-BZOiBW5vCG3CreI';
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyjwG9ZcK-zVPI1CEFeb3Sfcc5Hh0qUTM8R4FyrdYMAWNJ3VE-A9M5sRawT0W1qjak/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwsUQIwFnhQnxgjhjRh44sMpNe7wGY1VKQ45Dn-JLBCXk8GwwXpo3gE8F6cHgCW7A5I/exec';
 
 async function sbFetch(endpoint, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -1392,7 +1392,7 @@ let parteData = null;
 
 function buildParteData() {
   const productos = [];
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const prod = document.getElementById('producto' + i).value.trim();
     const cant = parseFloat(document.getElementById('cantidad' + i).value) || null;
     productos.push({ prod, cant });
@@ -1437,6 +1437,7 @@ function buildParteData() {
     producto3: productos[2].prod || null, cantidad3: productos[2].cant, dosis_alerta3: alertas[2], eco_alerta3: ecoAlertas[2],
     producto4: productos[3].prod || null, cantidad4: productos[3].cant, dosis_alerta4: alertas[3], eco_alerta4: ecoAlertas[3],
     producto5: productos[4].prod || null, cantidad5: productos[4].cant, dosis_alerta5: alertas[4], eco_alerta5: ecoAlertas[4],
+    producto6: productos[5].prod || null, cantidad6: productos[5].cant, dosis_alerta6: alertas[5], eco_alerta6: ecoAlertas[5],
     tiene_alertas: alertas.some(Boolean) || tieneEcoAlerta,
     tiene_eco_alerta: tieneEcoAlerta,
     tiene_verificar: tieneVerificar,
