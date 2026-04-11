@@ -188,6 +188,7 @@
       <div class="nav-section">General</div>
       <div class="nav-item active" onclick="showPage('fincas')"><span class="nav-icon">🌾</span> Fincas & Cultivos</div>
       <div class="nav-item" onclick="showPage('productos')"><span class="nav-icon">🧪</span> Productos</div>
+      <div class="nav-item" onclick="showPage('tareas-tratamiento')"><span class="nav-icon">📋</span> Tareas Tratamiento</div>
       <div class="nav-item" onclick="showPage('aplicadores')"><span class="nav-icon">👤</span> Aplicadores</div>
       <div class="nav-section">La Pacheca</div>
       <div class="nav-item" onclick="showPage('trabajadores')"><span class="nav-icon">👷</span> Trabajadores</div>
@@ -270,6 +271,27 @@
         <div class="card-title">🧪 Lista de productos</div>
         <input class="search-box" id="searchProductos" placeholder="Buscar producto..." oninput="filterProductos()">
         <div id="productosList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE: TAREAS TRATAMIENTO -->
+    <div class="page" id="page-tareas-tratamiento">
+      <div class="msg" id="msg-tareas-trat"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="stt-activas">—</div><div class="stat-label">Activas</div></div>
+        <div class="stat-card"><div class="stat-num red" id="stt-inactivas">—</div><div class="stat-label">Inactivas</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="stt-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nueva tarea</div>
+        <div class="form-row">
+          <div class="field-group"><label>Nombre de la tarea</label><input type="text" id="newTareaTrat" placeholder="Nombre..."></div>
+          <button class="btn-primary" id="btnAddTareaTrat" onclick="addTareaTrat()">+ Añadir</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Tareas del parte de tratamiento</div>
+        <div id="tareasTratList"><div class="loading">Cargando...</div></div>
       </div>
     </div>
 
@@ -413,6 +435,7 @@ const PASSWORD = 'zapata';
 const pages = {
   'fincas': { title: 'Fincas & Cultivos', sub: 'Gestión de fincas, cultivos y parcelas', load: loadFincas },
   'productos': { title: 'Productos', sub: 'Gestión del catálogo de productos fitosanitarios', load: loadProductos },
+  'tareas-tratamiento': { title: 'Tareas Tratamiento', sub: 'Tareas disponibles en el parte de tratamiento', load: loadTareasTrat },
   'aplicadores': { title: 'Aplicadores', sub: 'Gestión de aplicadores autorizados', load: loadAplicadores },
   'trabajadores': { title: 'Trabajadores La Pacheca', sub: 'Altas y bajas de trabajadores', load: loadTrabajadores },
   'tareas-david': { title: 'Tareas La Pacheca', sub: 'Tareas disponibles en el parte de David', load: loadTareasDavid },
@@ -424,7 +447,7 @@ let currentPage = 'fincas';
 let allFincas = [], allCultivos = [], allParcelas = [];
 let allProductos = [], allAplicadores = [];
 let allTrabajadores = [], allTareasDavid = [];
-let allEncargados = [], allTareasEnc = [];
+let allEncargados = [], allTareasEnc = [], allTareasTrat = [];
 
 // ── AUTH ──
 function checkPassword() {
@@ -845,6 +868,38 @@ async function toggleTareaEnc(id, activa) {
   await sb(`tareas_encargados?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activa }) });
   showMsg('msg-tareas-enc', activa ? '✅ Activada' : '✅ Desactivada', 'success');
   await loadTareasEnc();
+}
+
+// ── TAREAS TRATAMIENTO ──
+async function loadTareasTrat() {
+  const res = await sb('tareas_tratamiento?order=orden.asc&select=*');
+  allTareasTrat = await res.json();
+  const act = allTareasTrat.filter(t => t.activa).length;
+  document.getElementById('stt-activas').textContent = act;
+  document.getElementById('stt-inactivas').textContent = allTareasTrat.length - act;
+  document.getElementById('stt-total').textContent = allTareasTrat.length;
+  document.getElementById('tareasTratList').innerHTML = allTareasTrat.map(t => `
+    <div class="list-item">
+      <div class="item-name">${t.nombre} <span class="badge ${t.activa ? 'active' : 'inactive'}">${t.activa ? 'Activa' : 'Inactiva'}</span></div>
+      <div class="item-actions">
+        ${t.activa ? `<button class="btn-sm btn-danger" onclick="toggleTareaTrat('${t.id}',false)">Desactivar</button>`
+                   : `<button class="btn-sm btn-success" onclick="toggleTareaTrat('${t.id}',true)">Activar</button>`}
+      </div>
+    </div>`).join('') || '<div class="loading">No hay tareas</div>';
+}
+async function addTareaTrat() {
+  const nombre = document.getElementById('newTareaTrat').value.trim().toUpperCase();
+  if (!nombre) { showMsg('msg-tareas-trat', 'Introduce el nombre', 'error'); return; }
+  const btn = document.getElementById('btnAddTareaTrat'); btn.disabled = true;
+  const res = await sb('tareas_tratamiento', { method: 'POST', body: JSON.stringify({ nombre, orden: allTareasTrat.length+1, activa: true }) });
+  if (res.ok) { showMsg('msg-tareas-trat', `✅ "${nombre}" añadida`, 'success'); document.getElementById('newTareaTrat').value = ''; await loadTareasTrat(); }
+  else { showMsg('msg-tareas-trat', 'Error', 'error'); }
+  btn.disabled = false;
+}
+async function toggleTareaTrat(id, activa) {
+  await sb(`tareas_tratamiento?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activa }) });
+  showMsg('msg-tareas-trat', activa ? '✅ Activada' : '✅ Desactivada', 'success');
+  await loadTareasTrat();
 }
 
 // Init date
