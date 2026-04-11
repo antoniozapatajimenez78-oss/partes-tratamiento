@@ -581,75 +581,15 @@
 <script>
 // DATA
 const aplicadores = []; // Se cargan desde Supabase
-const tareas = ['FUMIGAR','ABONAR','INYECTAR','TRATAMIENTO RIEGO','GRANULO','ESPOLVOREO','VARIOS'];
+const tareas = []; // Se cargan desde Supabase
 const fincas = []; // Se cargan desde Supabase
 
 // Finca → Cultivos → Variedades (se carga desde Supabase)
 const fincaData = {};
 const fincaConsejo = {}; // finca → consejo (CAERM/CVB)
 
-// Superficies en hectáreas por variedad — null = sin cálculo de dosis
-const superficies = {
-  'La Pacheca': {
-    'VERNAS': 5.65,
-    'ORONULES (LP)': 2.38,
-    'NULESSIN (LP)': 3.10,
-    'INVERNADERO 1': 2.2535,
-    'INVERNADERO 2': 2.405,
-    'INVERNADERO 3': 2.37,
-    'INVERNADERO 4': 1.90,
-    'INVERNADERO 5': 0.512,
-    'INVERNADEROS TODOS': 9.44
-  },
-  'La Carrasca': {
-    'FINOS': 7.00,
-    'GOLD NUGGET (SJ)': 1.00,
-    'INVERNADERO 1': 0.288,
-    'INVERNADERO 2': 0.4736,
-    'INVERNADERO 3': 0.6025,
-    'INVERNADERO 4': 0.5683,
-    'INVERNADERO 5': 0.6216,
-    'INVERNADERO 6': 0.746,
-    'INVERNADEROS TODOS': 3.30
-  },
-  'Los Luises': {
-    'GRANADOS': 3.86,
-    'VALENCIA LATE (17)': 5.75,
-    'SOON Y RUBI (18)': 5.97,
-    'CLEMENULES (19)': 2.57,
-    'GOLD NUGGET (19)': 1.63
-  },
-  'Los Llanos': {
-    'VIEJOS (15)': 2.90,
-    'CHAPARROS (7)': 1.46,
-    'LIMÓN ANTOLÍN (21)': 1.55,
-    'LIMÓN 2020 (12)': 0.99,
-    'NUEVOS CARRETERA (12N)': 1.66,
-    'NUEVOS CONEJOS (8)': 1.98,
-    'NUEVOS MOLINERO (4)': 2.74,
-    'TANGO (16)': 6.90,
-    'LORETINA CASA (9)': 1.91,
-    'LORETINA (10)': 0.30,
-    'LORETINA PINO (11)': 0.64,
-    'ORONULES (22)': 1.59,
-    'GOLD NUGGET (23A)': 0.90,
-    'NEUFINA (23)': 0.85,
-    'MANDANOVA MANCO (14)': 2.82,
-    'CULTIFORT (9A)': 0.73,
-    'RUBI INVERNADEROS (20)': 0.85,
-    'RUBI INJERTOS (3)': 1.24,
-    'SOON INJERTOS (3A)': 0.79,
-    'INJERTOS (3 + 3A)': 2.03,
-    'POMELO START RUBI CAÑADA (5)': 2.45,
-    'POMELO START RUBI (13)': 2.04
-  },
-  'Lo Alegre': {
-    'FINOS': 1.48,
-    'BRÓCOLI': null,
-    'MELÓN': null,
-    'CALABAZA': null
-  }
-};
+// Superficies en hectáreas por parcela — se cargan desde Supabase
+const superficies = {}; // { finca: { parcela: hectareas } }
 
 // Get total surface for selected variedades
 function getSuperficieTotal() {
@@ -1291,17 +1231,19 @@ async function sbFetch(endpoint, options = {}) {
 async function loadDatosFromDB() {
   try {
     // Load fincas, cultivos, parcelas
-    const [rf, rc, rp, ra] = await Promise.all([
+    const [rf, rc, rp, ra, rt] = await Promise.all([
       sbFetch('fincas?activa=eq.true&order=nombre.asc&select=*'),
       sbFetch('cultivos?activo=eq.true&order=nombre.asc&select=*'),
-      sbFetch('parcelas?activa=eq.true&order=nombre.asc&select=*'),
-      sbFetch('aplicadores?activo=eq.true&order=nombre.asc&select=nombre')
+      sbFetch('parcelas?activa=eq.true&order=nombre.asc&select=id,cultivo_id,nombre,superficie'),
+      sbFetch('aplicadores?activo=eq.true&order=nombre.asc&select=nombre'),
+      sbFetch('tareas_tratamiento?activa=eq.true&order=orden.asc&select=nombre')
     ]);
 
     const dbFincas = await rf.json();
     const dbCultivos = await rc.json();
     const dbParcelas = await rp.json();
     const dbAplicadores = await ra.json();
+    const dbTareas = await rt.json();
 
     // Build fincas array
     fincas.length = 0;
@@ -1309,17 +1251,18 @@ async function loadDatosFromDB() {
       fincas.push(f.nombre);
       fincaConsejo[f.nombre] = f.consejo;
       fincaData[f.nombre] = {};
+      superficies[f.nombre] = {};
     });
 
-    // Build fincaData structure
+    // Build fincaData structure + superficies
     dbCultivos.forEach(c => {
       const finca = dbFincas.find(f => f.id === c.finca_id);
       if (finca && fincaData[finca.nombre]) {
         fincaData[finca.nombre][c.nombre] = [];
-        // Add parcelas for this cultivo
         dbParcelas.forEach(p => {
           if (p.cultivo_id === c.id) {
             fincaData[finca.nombre][c.nombre].push(p.nombre);
+            if (p.superficie) superficies[finca.nombre][p.nombre] = p.superficie;
           }
         });
       }
@@ -1329,7 +1272,11 @@ async function loadDatosFromDB() {
     aplicadores.length = 0;
     dbAplicadores.forEach(a => aplicadores.push(a.nombre));
 
-    console.log(`✅ ${fincas.length} fincas, ${aplicadores.length} aplicadores cargados`);
+    // Build tareas array
+    tareas.length = 0;
+    dbTareas.forEach(t => tareas.push(t.nombre));
+
+    console.log(`✅ ${fincas.length} fincas, ${aplicadores.length} aplicadores, ${tareas.length} tareas cargados`);
   } catch(e) {
     console.warn('⚠️ Error cargando datos desde Supabase:', e);
   }
