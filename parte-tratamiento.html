@@ -580,39 +580,13 @@
 
 <script>
 // DATA
-const aplicadores = ['PACO','JOSE','JAVI','ANTONIO','MIGUEL','JUAN','DAVID','JAFAR','KLEVER','FABIAN','CLEMENTE','SARA','PILAR','ISABEL'];
+const aplicadores = []; // Se cargan desde Supabase
 const tareas = ['FUMIGAR','ABONAR','INYECTAR','TRATAMIENTO RIEGO','GRANULO','ESPOLVOREO','VARIOS'];
-const fincas = ['La Pacheca','Los Luises','La Carrasca','Los Llanos','Lo Alegre'];
+const fincas = []; // Se cargan desde Supabase
 
-// Finca → Cultivos → Variedades
-const fincaData = {
-  'La Pacheca': {
-    'LIMÓN': ['VERNAS'],
-    'PIMIENTO': ['INVERNADERO 1','INVERNADERO 2','INVERNADERO 3','INVERNADERO 4','INVERNADERO 5','INVERNADEROS TODOS'],
-    'MANDARINOS': ['ORONULES (LP)','NULESSIN (LP)']
-  },
-  'La Carrasca': {
-    'LIMÓN': ['FINOS'],
-    'PIMIENTO': ['INVERNADERO 1','INVERNADERO 2','INVERNADERO 3','INVERNADERO 4','INVERNADERO 5','INVERNADERO 6','INVERNADEROS TODOS'],
-    'MANDARINOS': ['GOLD NUGGET (SJ)']
-  },
-  'Los Luises': {
-    'GRANADOS': ['GRANADOS'],
-    'NARANJA': ['VALENCIA LATE (17)'],
-    'MANDARINOS': ['SOON Y RUBI (18)','CLEMENULES (19)','GOLD NUGGET (19)']
-  },
-  'Los Llanos': {
-    'LIMÓN': ['VIEJOS (15)','CHAPARROS (7)','LIMÓN ANTOLÍN (21)','LIMÓN 2020 (12)','NUEVOS CARRETERA (12N)','NUEVOS CONEJOS (8)','NUEVOS MOLINERO (4)'],
-    'MANDARINOS': ['TANGO (16)','LORETINA CASA (9)','LORETINA (10)','LORETINA PINO (11)','ORONULES (22)','GOLD NUGGET (23A)','NEUFINA (23)','MANDANOVA MANCO (14)','CULTIFORT (9A)','RUBI INVERNADEROS (20)','RUBI INJERTOS (3)','SOON INJERTOS (3A)','INJERTOS (3 + 3A)'],
-    'POMELO': ['POMELO START RUBI CAÑADA (5)','POMELO START RUBI (13)']
-  },
-  'Lo Alegre': {
-    'LIMÓN': ['FINOS'],
-    'BRÓCOLI': ['BRÓCOLI'],
-    'MELÓN': ['MELÓN'],
-    'CALABAZA': ['CALABAZA']
-  }
-};
+// Finca → Cultivos → Variedades (se carga desde Supabase)
+const fincaData = {};
+const fincaConsejo = {}; // finca → consejo (CAERM/CVB)
 
 // Superficies en hectáreas por variedad — null = sin cálculo de dosis
 const superficies = {
@@ -1183,10 +1157,8 @@ function buildProducts() {
   }
 }
 
-// Init
-buildRadioGrid('aplicador-grid', aplicadores, 'aplicador');
+// Init — grids built after DB load below
 buildRadioGrid('tarea-grid', tareas, 'tarea');
-buildRadioGrid('finca-grid', fincas, 'finca');
 
 // Cultivo y variedad empiezan vacíos, se rellenan al elegir finca/cultivo
 document.getElementById('cultivo-grid').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero una finca</div>';
@@ -1321,14 +1293,60 @@ async function sbFetch(endpoint, options = {}) {
   return res;
 }
 
-// Load products from Supabase on startup
+// Load all data from Supabase on startup
+async function loadDatosFromDB() {
+  try {
+    // Load fincas, cultivos, parcelas
+    const [rf, rc, rp, ra] = await Promise.all([
+      sbFetch('fincas?activa=eq.true&order=nombre.asc&select=*'),
+      sbFetch('cultivos?activo=eq.true&order=nombre.asc&select=*'),
+      sbFetch('parcelas?activa=eq.true&order=nombre.asc&select=*'),
+      sbFetch('aplicadores?activo=eq.true&order=nombre.asc&select=nombre')
+    ]);
+
+    const dbFincas = await rf.json();
+    const dbCultivos = await rc.json();
+    const dbParcelas = await rp.json();
+    const dbAplicadores = await ra.json();
+
+    // Build fincas array
+    fincas.length = 0;
+    dbFincas.forEach(f => {
+      fincas.push(f.nombre);
+      fincaConsejo[f.nombre] = f.consejo;
+      fincaData[f.nombre] = {};
+    });
+
+    // Build fincaData structure
+    dbCultivos.forEach(c => {
+      const finca = dbFincas.find(f => f.id === c.finca_id);
+      if (finca && fincaData[finca.nombre]) {
+        fincaData[finca.nombre][c.nombre] = [];
+        // Add parcelas for this cultivo
+        dbParcelas.forEach(p => {
+          if (p.cultivo_id === c.id) {
+            fincaData[finca.nombre][c.nombre].push(p.nombre);
+          }
+        });
+      }
+    });
+
+    // Build aplicadores array
+    aplicadores.length = 0;
+    dbAplicadores.forEach(a => aplicadores.push(a.nombre));
+
+    console.log(`✅ ${fincas.length} fincas, ${aplicadores.length} aplicadores cargados`);
+  } catch(e) {
+    console.warn('⚠️ Error cargando datos desde Supabase:', e);
+  }
+}
+
 async function loadProductosFromDB() {
   try {
     const res = await sbFetch('productos?activo=eq.true&order=nombre_comercial.asc&select=nombre_comercial,materia_activa,eco_caerm,eco_cvb,dosis_maxima,plazo_seguridad');
     if (!res.ok) throw new Error('Error cargando productos');
     const data = await res.json();
     if (data && data.length > 0) {
-      // Replace the hardcoded list with DB data
       fitosanitarios.length = 0;
       data.forEach(p => {
         const ecoVal = state.finca
@@ -1348,7 +1366,7 @@ async function loadProductosFromDB() {
       console.log(`✅ ${fitosanitarios.length} productos cargados desde Supabase`);
     }
   } catch(e) {
-    console.warn('⚠️ No se pudieron cargar productos desde Supabase, usando lista local:', e);
+    console.warn('⚠️ No se pudieron cargar productos desde Supabase:', e);
   }
 }
 
@@ -1547,8 +1565,10 @@ document.getElementById('mainForm').addEventListener('submit', function(e) {
   showReview(parteData);
 });
 
-// Init: load products from DB then build form
-loadProductosFromDB().then(() => {
+// Init: load all data from DB then build form
+Promise.all([loadDatosFromDB(), loadProductosFromDB()]).then(() => {
+  buildRadioGrid('aplicador-grid', aplicadores, 'aplicador');
+  buildRadioGrid('finca-grid', fincas, 'finca');
   buildProducts();
 });
 
