@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Control — Agroinver Zapata</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark: #1a2e1a; --dark2: #243524; --accent: #4a8c3f; --accent-light: #e8f5e4;
+    --amber: #f5a623; --red: #e94560; --green: #4caf7d;
+    --cream: #f8f8f6; --white: #ffffff;
+    --text: #2c3e2c; --text-mid: #6b7c6b; --border: #e0eae0;
+    --sidebar-w: 240px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--dark); background-image: radial-gradient(circle at 25% 50%, rgba(74,140,63,0.25) 0%, transparent 55%), radial-gradient(circle at 75% 30%, rgba(245,166,35,0.1) 0%, transparent 50%); }
+  .login-box { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 3rem 2.5rem; width: 90%; max-width: 380px; text-align: center; backdrop-filter: blur(20px); }
+  .login-logo { font-size: 3rem; margin-bottom: 1rem; }
+  .login-box h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.1em; color: white; margin-bottom: 0.2rem; }
+  .login-box p { color: rgba(255,255,255,0.35); font-size: 0.82rem; margin-bottom: 2rem; letter-spacing: 0.05em; text-transform: uppercase; }
+  .login-input { width: 100%; padding: 0.9rem 1rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; font-family: 'DM Sans', sans-serif; font-size: 1rem; outline: none; margin-bottom: 0.75rem; text-align: center; letter-spacing: 0.25em; }
+  .login-input:focus { border-color: var(--accent); }
+  .login-btn { width: 100%; padding: 0.9rem; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.12em; cursor: pointer; transition: background 0.2s; }
+  .login-btn:hover { background: #3a7a2f; }
+  .login-error { color: var(--red); font-size: 0.82rem; margin-top: 0.5rem; display: none; }
+
+  /* LAYOUT */
+  .app { display: none; min-height: 100vh; }
+  .app.show { display: flex; }
+
+  /* SIDEBAR */
+  .sidebar { width: var(--sidebar-w); background: var(--dark); min-height: 100vh; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 50; transition: transform 0.3s; }
+  .sidebar-logo { padding: 1.5rem 1.2rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo .logo-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .sidebar-logo h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.1em; color: white; line-height: 1.2; }
+  .sidebar-logo p { font-size: 0.68rem; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 0.2rem; }
+
+  .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+  .nav-section { padding: 0.5rem 1.2rem 0.25rem; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.25); }
+  .nav-item { display: flex; align-items: center; gap: 0.7rem; padding: 0.65rem 1.2rem; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 0.88rem; font-weight: 500; transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+  .nav-item.active { background: rgba(74,140,63,0.2); color: white; border-left-color: var(--accent); }
+  .nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+
+  .sidebar-footer { padding: 1rem 1.2rem; border-top: 1px solid rgba(255,255,255,0.08); }
+  .btn-logout { width: 100%; padding: 0.6rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+  .btn-logout:hover { background: rgba(233,69,96,0.2); color: var(--red); border-color: var(--red); }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+  .topbar { background: white; border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+  .topbar-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.06em; color: var(--text); }
+  .topbar-sub { font-size: 0.78rem; color: var(--text-mid); }
+  .hamburger { display: none; background: none; border: none; cursor: pointer; font-size: 1.3rem; }
+
+  .page { display: none; padding: 2rem; max-width: 960px; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card { background: white; border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border); margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.08em; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
+  .stat-card { background: white; border-radius: 12px; padding: 1rem 1.2rem; border: 1px solid var(--border); text-align: center; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; line-height: 1; }
+  .stat-num.green { color: var(--green); }
+  .stat-num.red { color: var(--red); }
+  .stat-num.amber { color: var(--amber); }
+  .stat-label { font-size: 0.68rem; color: var(--text-mid); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem; }
+
+  /* FORMS */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .form-row { display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: end; }
+  .field-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .field-group.full { grid-column: 1 / -1; }
+  .field-group label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-mid); }
+  .field-group input, .field-group select { padding: 0.65rem 0.9rem; border: 1.5px solid var(--border); border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; background: white; }
+  .field-group input:focus, .field-group select:focus { border-color: var(--accent); }
+
+  .btn-primary { padding: 0.65rem 1.4rem; background: var(--dark); color: white; border: none; border-radius: 9px; font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.08em; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+  .btn-primary:hover { background: var(--accent); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* LISTS */
+  .search-box { width: 100%; padding: 0.65rem 1rem; border: 1.5px solid var(--border); border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; margin-bottom: 0.75rem; }
+  .search-box:focus { border-color: var(--accent); }
+
+  .list-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--border); gap: 0.5rem; }
+  .list-item:last-child { border-bottom: none; }
+  .item-info { flex: 1; }
+  .item-name { font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .item-meta { font-size: 0.75rem; color: var(--text-mid); margin-top: 0.15rem; }
+  .item-actions { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
+
+  .badge { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.18rem 0.55rem; border-radius: 20px; white-space: nowrap; }
+  .badge.active { background: #e8f8ef; color: var(--green); }
+  .badge.inactive { background: #ffeef0; color: var(--red); }
+  .badge.caerm { background: #e8f0ff; color: #3355aa; }
+  .badge.cvb { background: #fff3e0; color: #e65100; }
+  .badge.eco-ok { background: #e8f8ef; color: var(--green); }
+  .badge.eco-no { background: #ffeef0; color: var(--red); }
+  .badge.eco-check { background: #fff8e0; color: var(--amber); }
+  .pin-badge { background: #f0f0ff; border: 1px solid #d0d0ff; border-radius: 6px; padding: 0.15rem 0.5rem; font-size: 0.75rem; font-family: monospace; font-weight: 700; color: #5555aa; }
+
+  .btn-sm { padding: 0.28rem 0.65rem; background: transparent; border-radius: 7px; font-size: 0.73rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1.5px solid; white-space: nowrap; }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red); color: white; }
+  .btn-success { border-color: var(--green); color: var(--green); }
+  .btn-success:hover { background: var(--green); color: white; }
+  .btn-edit { border-color: var(--accent); color: var(--accent); }
+  .btn-edit:hover { background: var(--accent); color: white; }
+  .btn-pin { border-color: #5555aa; color: #5555aa; }
+  .btn-pin:hover { background: #5555aa; color: white; }
+
+  /* FINCAS TREE */
+  .finca-block { border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 0.75rem; }
+  .finca-header { background: var(--accent-light); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; }
+  .finca-name { font-weight: 700; font-size: 0.95rem; }
+  .cultivo-row { padding: 0.5rem 1rem 0.5rem 1.5rem; border-top: 1px solid var(--border); }
+  .cultivo-name { font-weight: 600; font-size: 0.82rem; color: var(--accent); margin-bottom: 0.25rem; }
+  .parcelas-wrap { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .parcela-chip { background: #f0f5f0; border: 1px solid var(--border); border-radius: 6px; padding: 0.15rem 0.5rem; font-size: 0.75rem; color: var(--text); }
+
+  /* PRODUCT ITEMS */
+  .product-item { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--border); }
+  .product-item:last-child { border-bottom: none; }
+  .product-name { font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .product-meta { font-size: 0.73rem; color: var(--text-mid); margin-top: 0.2rem; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+  /* MSG */
+  .msg { padding: 0.75rem 1rem; border-radius: 9px; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+  .msg.success { background: #e8f8ef; color: #2d7a4f; border: 1px solid #b8e8ce; }
+  .msg.error { background: #ffeef0; color: #c0392b; border: 1px solid #ffcdd2; }
+  .msg.show { display: block; }
+  .loading { text-align: center; padding: 2rem; color: var(--text-mid); font-size: 0.9rem; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.08em; margin-bottom: 1rem; }
+  .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+  .btn-cancel { padding: 0.6rem 1.2rem; background: var(--cream); border: 1.5px solid var(--border); border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .hamburger { display: block; }
+    .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .page { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🌿</div>
+    <h1>Agroinver Zapata</h1>
+    <p>Panel de Control</p>
+    <input type="password" class="login-input" id="passwordInput" placeholder="••••••">
+    <button class="login-btn" onclick="checkPassword()">Acceder</button>
+    <div class="login-error" id="loginError">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🌿</div>
+      <h2>Agroinver Zapata</h2>
+      <p>Panel de Control</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">General</div>
+      <div class="nav-item active" onclick="showPage('fincas')"><span class="nav-icon">🌾</span> Fincas & Cultivos</div>
+      <div class="nav-item" onclick="showPage('productos')"><span class="nav-icon">🧪</span> Productos</div>
+      <div class="nav-item" onclick="showPage('aplicadores')"><span class="nav-icon">👤</span> Aplicadores</div>
+      <div class="nav-section">La Pacheca</div>
+      <div class="nav-item" onclick="showPage('trabajadores')"><span class="nav-icon">👷</span> Trabajadores</div>
+      <div class="nav-item" onclick="showPage('tareas-david')"><span class="nav-icon">📋</span> Tareas La Pacheca</div>
+      <div class="nav-section">Encargados</div>
+      <div class="nav-item" onclick="showPage('encargados')"><span class="nav-icon">👔</span> Encargados & PINs</div>
+      <div class="nav-item" onclick="showPage('tareas-encargados')"><span class="nav-icon">📋</span> Tareas Encargados</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">🚪 Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Fincas & Cultivos</div>
+        <div class="topbar-sub" id="topbar-sub">Gestión de fincas, cultivos y parcelas</div>
+      </div>
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    </div>
+
+    <!-- PAGE: FINCAS -->
+    <div class="page active" id="page-fincas">
+      <div class="msg" id="msg-fincas"></div>
+      <div class="card">
+        <div class="card-title">➕ Nueva finca</div>
+        <div class="form-grid">
+          <div class="field-group"><label>Nombre</label><input type="text" id="nf-nombre" placeholder="Nombre de la finca..."></div>
+          <div class="field-group"><label>Consejo</label><select id="nf-consejo"><option value="CAERM">CAERM (Murcia)</option><option value="CVB">CVB (Valencia)</option></select></div>
+        </div>
+        <button class="btn-primary" id="btnAddFinca" onclick="addFinca()">+ Añadir finca</button>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nuevo cultivo</div>
+        <div class="form-row">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="field-group"><label>Finca</label><select id="nc-finca"></select></div>
+            <div class="field-group"><label>Nombre cultivo</label><input type="text" id="nc-nombre" placeholder="Ej: LIMÓN..."></div>
+          </div>
+          <button class="btn-primary" id="btnAddCultivo" onclick="addCultivo()">+ Añadir</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nueva parcela</div>
+        <div class="form-grid-3">
+          <div class="field-group"><label>Finca</label><select id="np-finca" onchange="loadCultivosSelector('np-finca','np-cultivo')"></select></div>
+          <div class="field-group"><label>Cultivo</label><select id="np-cultivo"></select></div>
+          <div class="field-group"><label>Nombre parcela</label><input type="text" id="np-nombre" placeholder="Ej: VERNAS..."></div>
+        </div>
+        <button class="btn-primary" id="btnAddParcela" onclick="addParcela()">+ Añadir parcela</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🌾 Estructura actual</div>
+        <div id="fincasList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE: PRODUCTOS -->
+    <div class="page" id="page-productos">
+      <div class="msg" id="msg-productos"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="sp-activos">—</div><div class="stat-label">Activos</div></div>
+        <div class="stat-card"><div class="stat-num red" id="sp-inactivos">—</div><div class="stat-label">Inactivos</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="sp-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nuevo producto</div>
+        <div class="form-grid">
+          <div class="field-group full"><label>Nombre</label><input type="text" id="np2-nombre" placeholder="Nombre del producto..."></div>
+          <div class="field-group"><label>Dosis máxima (L/Kg·ha)</label><input type="number" id="np2-dosis" step="0.01" placeholder="0.00"></div>
+          <div class="field-group"><label>Plazo seguridad (días)</label><input type="number" id="np2-plazo" placeholder="0"></div>
+          <div class="field-group"><label>Eco CAERM</label><select id="np2-eco-caerm"><option value="ok">✅ Autorizado</option><option value="warn">🚫 No autorizado</option><option value="unknown">❓ Verificar</option></select></div>
+          <div class="field-group"><label>Eco CVB</label><select id="np2-eco-cvb"><option value="ok">✅ Autorizado</option><option value="warn">🚫 No autorizado</option><option value="unknown">❓ Verificar</option></select></div>
+        </div>
+        <button class="btn-primary" id="btnAddProducto" onclick="addProducto()">+ Añadir producto</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🧪 Lista de productos</div>
+        <input class="search-box" id="searchProductos" placeholder="Buscar producto..." oninput="filterProductos()">
+        <div id="productosList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE: APLICADORES -->
+    <div class="page" id="page-aplicadores">
+      <div class="msg" id="msg-aplicadores"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="sa-activos">—</div><div class="stat-label">Activos</div></div>
+        <div class="stat-card"><div class="stat-num red" id="sa-inactivos">—</div><div class="stat-label">Inactivos</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="sa-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nuevo aplicador</div>
+        <div class="form-row">
+          <div class="field-group"><label>Nombre</label><input type="text" id="newAplicador" placeholder="Nombre..."></div>
+          <button class="btn-primary" id="btnAddAplicador" onclick="addAplicador()">+ Añadir</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">👤 Lista de aplicadores</div>
+        <div id="aplicadoresList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE: TRABAJADORES -->
+    <div class="page" id="page-trabajadores">
+      <div class="msg" id="msg-trabajadores"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="st-activos">—</div><div class="stat-label">Activos</div></div>
+        <div class="stat-card"><div class="stat-num red" id="st-bajas">—</div><div class="stat-label">Bajas</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="st-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Añadir trabajador</div>
+        <div class="form-grid">
+          <div class="field-group"><label>Nombre completo</label><input type="text" id="newTrabajador" placeholder="Nombre..."></div>
+          <div class="field-group"><label>Fecha de alta</label><input type="date" id="newFechaAlta"></div>
+        </div>
+        <button class="btn-primary" id="btnAddTrabajador" onclick="addTrabajador()">+ Añadir</button>
+      </div>
+      <div class="card">
+        <div class="card-title">👷 Trabajadores La Pacheca</div>
+        <input class="search-box" id="searchTrabajadores" placeholder="Buscar trabajador..." oninput="filterTrabajadores()">
+        <div id="trabajadoresList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE: TAREAS DAVID -->
+    <div class="page" id="page-tareas-david">
+      <div class="msg" id="msg-tareas-david"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="std-activas">—</div><div class="stat-label">Activas</div></div>
+        <div class="stat-card"><div class="stat-num red" id="std-inactivas">—</div><div class="stat-label">Inactivas</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="std-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nueva tarea</div>
+        <div class="form-row">
+          <div class="field-group"><label>Nombre de la tarea</label><input type="text" id="newTareaDavid" placeholder="Nombre..."></div>
+          <button class="btn-primary" id="btnAddTareaDavid" onclick="addTareaDavid()">+ Añadir</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Tareas La Pacheca</div>
+        <input class="search-box" id="searchTareasDavid" placeholder="Buscar tarea..." oninput="filterTareasDavid()">
+        <div id="tareasDavidList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE: ENCARGADOS -->
+    <div class="page" id="page-encargados">
+      <div class="msg" id="msg-encargados"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="se-activos">—</div><div class="stat-label">Activos</div></div>
+        <div class="stat-card"><div class="stat-num red" id="se-inactivos">—</div><div class="stat-label">Inactivos</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="se-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nuevo encargado</div>
+        <div class="form-grid">
+          <div class="field-group"><label>Nombre</label><input type="text" id="newEncargado" placeholder="Nombre..."></div>
+          <div class="field-group"><label>PIN (4 dígitos)</label><input type="text" id="newPin" placeholder="1234" maxlength="4"></div>
+        </div>
+        <button class="btn-primary" id="btnAddEncargado" onclick="addEncargado()">+ Añadir</button>
+      </div>
+      <div class="card">
+        <div class="card-title">👔 Encargados</div>
+        <div id="encargadosList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE: TAREAS ENCARGADOS -->
+    <div class="page" id="page-tareas-encargados">
+      <div class="msg" id="msg-tareas-enc"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="ste-activas">—</div><div class="stat-label">Activas</div></div>
+        <div class="stat-card"><div class="stat-num red" id="ste-inactivas">—</div><div class="stat-label">Inactivas</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="ste-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nueva tarea</div>
+        <div class="form-row">
+          <div class="field-group"><label>Nombre de la tarea</label><input type="text" id="newTareaEnc" placeholder="Nombre..."></div>
+          <button class="btn-primary" id="btnAddTareaEnc" onclick="addTareaEnc()">+ Añadir</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Tareas Encargados</div>
+        <input class="search-box" id="searchTareasEnc" placeholder="Buscar tarea..." oninput="filterTareasEnc()">
+        <div id="tareasEncList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL EDITAR PRODUCTO -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar producto</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-grid">
+      <div class="field-group full"><label>Nombre</label><input type="text" id="edit-nombre"></div>
+      <div class="field-group"><label>Dosis máxima</label><input type="number" id="edit-dosis" step="0.01"></div>
+      <div class="field-group"><label>Plazo seguridad (días)</label><input type="number" id="edit-plazo"></div>
+      <div class="field-group"><label>Eco CAERM</label><select id="edit-eco-caerm"><option value="ok">✅ Autorizado</option><option value="warn">🚫 No autorizado</option><option value="unknown">❓ Verificar</option></select></div>
+      <div class="field-group"><label>Eco CVB</label><select id="edit-eco-cvb"><option value="ok">✅ Autorizado</option><option value="warn">🚫 No autorizado</option><option value="unknown">❓ Verificar</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveProducto()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://jecqfntpvzwipjcleqbl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3FmbnRwdnp3aXBqY2xlcWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzE2NjIsImV4cCI6MjA5MDQ0NzY2Mn0.J26k1VElLscwOxhGTBXpyw-OnXZ-BZOiBW5vCG3CreI';
+const PASSWORD = 'agroinver2026';
+
+const pages = {
+  'fincas': { title: 'Fincas & Cultivos', sub: 'Gestión de fincas, cultivos y parcelas', load: loadFincas },
+  'productos': { title: 'Productos', sub: 'Gestión del catálogo de productos fitosanitarios', load: loadProductos },
+  'aplicadores': { title: 'Aplicadores', sub: 'Gestión de aplicadores autorizados', load: loadAplicadores },
+  'trabajadores': { title: 'Trabajadores La Pacheca', sub: 'Altas y bajas de trabajadores', load: loadTrabajadores },
+  'tareas-david': { title: 'Tareas La Pacheca', sub: 'Tareas disponibles en el parte de David', load: loadTareasDavid },
+  'encargados': { title: 'Encargados & PINs', sub: 'Gestión de encargados y acceso por PIN', load: loadEncargados },
+  'tareas-encargados': { title: 'Tareas Encargados', sub: 'Tareas disponibles en los partes de encargados', load: loadTareasEnc }
+};
+
+let currentPage = 'fincas';
+let allFincas = [], allCultivos = [], allParcelas = [];
+let allProductos = [], allAplicadores = [];
+let allTrabajadores = [], allTareasDavid = [];
+let allEncargados = [], allTareasEnc = [];
+
+// ── AUTH ──
+function checkPassword() {
+  if (document.getElementById('passwordInput').value === PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    loadFincas();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('passwordInput').value = '';
+  }
+}
+document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
+function logout() { document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('app').classList.remove('show'); document.getElementById('passwordInput').value = ''; }
+
+// ── NAV ──
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+  document.getElementById('topbar-title').textContent = pages[page].title;
+  document.getElementById('topbar-sub').textContent = pages[page].sub;
+  currentPage = page;
+  if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+  pages[page].load();
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// ── SUPABASE ──
+async function sb(endpoint, options = {}) {
+  return fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    ...options,
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation', ...options.headers }
+  });
+}
+
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text; el.className = `msg ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── FINCAS ──
+async function loadFincas() {
+  const [rf, rc, rp] = await Promise.all([
+    sb('fincas?order=nombre.asc&select=*'),
+    sb('cultivos?order=nombre.asc&select=*'),
+    sb('parcelas?order=nombre.asc&select=*')
+  ]);
+  allFincas = await rf.json();
+  allCultivos = await rc.json();
+  allParcelas = await rp.json();
+  renderFincas();
+  ['nc-finca','np-finca'].forEach(id => {
+    document.getElementById(id).innerHTML = allFincas.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
+  });
+  loadCultivosSelector('np-finca', 'np-cultivo');
+}
+
+function renderFincas() {
+  const list = document.getElementById('fincasList');
+  if (!allFincas.length) { list.innerHTML = '<div class="loading">No hay fincas</div>'; return; }
+  list.innerHTML = allFincas.map(f => {
+    const cultivos = allCultivos.filter(c => c.finca_id === f.id);
+    return `<div class="finca-block">
+      <div class="finca-header">
+        <div class="finca-name">${f.nombre}</div>
+        <div style="display:flex;gap:0.4rem;align-items:center">
+          <span class="badge ${f.consejo === 'CAERM' ? 'caerm' : 'cvb'}">${f.consejo}</span>
+          <span class="badge ${f.activa ? 'active' : 'inactive'}">${f.activa ? 'Activa' : 'Inactiva'}</span>
+        </div>
+      </div>
+      ${cultivos.map(c => {
+        const parcelas = allParcelas.filter(p => p.cultivo_id === c.id);
+        return `<div class="cultivo-row">
+          <div class="cultivo-name">🌱 ${c.nombre}</div>
+          <div class="parcelas-wrap">${parcelas.map(p => `<span class="parcela-chip">${p.nombre}</span>`).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function loadCultivosSelector(fincaField, cultivoField) {
+  const fincaId = document.getElementById(fincaField || 'np-finca').value;
+  const cultivos = allCultivos.filter(c => c.finca_id === fincaId);
+  document.getElementById(cultivoField || 'np-cultivo').innerHTML = cultivos.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+}
+
+async function addFinca() {
+  const nombre = document.getElementById('nf-nombre').value.trim();
+  if (!nombre) { showMsg('msg-fincas', 'Introduce el nombre', 'error'); return; }
+  const btn = document.getElementById('btnAddFinca'); btn.disabled = true;
+  const res = await sb('fincas', { method: 'POST', body: JSON.stringify({ nombre, consejo: document.getElementById('nf-consejo').value, activa: true }) });
+  if (res.ok) { showMsg('msg-fincas', `✅ Finca "${nombre}" añadida`, 'success'); document.getElementById('nf-nombre').value = ''; await loadFincas(); }
+  else { showMsg('msg-fincas', 'Error al añadir', 'error'); }
+  btn.disabled = false;
+}
+
+async function addCultivo() {
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  const finca_id = document.getElementById('nc-finca').value;
+  if (!nombre) { showMsg('msg-fincas', 'Introduce el nombre del cultivo', 'error'); return; }
+  const btn = document.getElementById('btnAddCultivo'); btn.disabled = true;
+  const res = await sb('cultivos', { method: 'POST', body: JSON.stringify({ finca_id, nombre, activo: true }) });
+  if (res.ok) { showMsg('msg-fincas', `✅ Cultivo "${nombre}" añadido`, 'success'); document.getElementById('nc-nombre').value = ''; await loadFincas(); }
+  else { showMsg('msg-fincas', 'Error al añadir', 'error'); }
+  btn.disabled = false;
+}
+
+async function addParcela() {
+  const nombre = document.getElementById('np-nombre').value.trim();
+  const cultivo_id = document.getElementById('np-cultivo').value;
+  if (!nombre || !cultivo_id) { showMsg('msg-fincas', 'Selecciona cultivo e introduce nombre', 'error'); return; }
+  const btn = document.getElementById('btnAddParcela'); btn.disabled = true;
+  const res = await sb('parcelas', { method: 'POST', body: JSON.stringify({ cultivo_id, nombre, activa: true }) });
+  if (res.ok) { showMsg('msg-fincas', `✅ Parcela "${nombre}" añadida`, 'success'); document.getElementById('np-nombre').value = ''; await loadFincas(); }
+  else { showMsg('msg-fincas', 'Error al añadir', 'error'); }
+  btn.disabled = false;
+}
+
+// ── PRODUCTOS ──
+async function loadProductos() {
+  const res = await sb('productos?order=nombre.asc&select=*');
+  allProductos = await res.json();
+  renderProductos(allProductos);
+  const act = allProductos.filter(p => p.activo !== false).length;
+  document.getElementById('sp-activos').textContent = act;
+  document.getElementById('sp-inactivos').textContent = allProductos.length - act;
+  document.getElementById('sp-total').textContent = allProductos.length;
+}
+
+function ecoBadge(val) {
+  if (!val || val === 'ok') return '<span class="badge eco-ok">✅ OK</span>';
+  if (val === 'warn') return '<span class="badge eco-no">🚫</span>';
+  return '<span class="badge eco-check">❓</span>';
+}
+
+function renderProductos(productos) {
+  const list = document.getElementById('productosList');
+  if (!productos.length) { list.innerHTML = '<div class="loading">No hay productos</div>'; return; }
+  list.innerHTML = productos.map(p => `
+    <div class="product-item">
+      <div>
+        <div class="product-name">${p.nombre} <span class="badge ${p.activo !== false ? 'active' : 'inactive'}">${p.activo !== false ? 'Activo' : 'Inactivo'}</span></div>
+        <div class="product-meta">
+          ${p.dosis_maxima ? `<span>Dosis: ${p.dosis_maxima}</span>` : '<span style="opacity:0.5">Sin dosis</span>'}
+          ${p.plazo_seguridad ? `<span>Plazo: ${p.plazo_seguridad}d</span>` : ''}
+          CAERM: ${ecoBadge(p.eco_caerm)} CVB: ${ecoBadge(p.eco_cvb)}
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="btn-sm btn-edit" onclick="openEdit('${p.id}')">✏️</button>
+        ${p.activo !== false
+          ? `<button class="btn-sm btn-danger" onclick="toggleProducto('${p.id}',false)">Desactivar</button>`
+          : `<button class="btn-sm btn-success" onclick="toggleProducto('${p.id}',true)">Activar</button>`}
+      </div>
+    </div>`).join('');
+}
+
+function filterProductos() {
+  const q = document.getElementById('searchProductos').value.toLowerCase();
+  renderProductos(allProductos.filter(p => p.nombre.toLowerCase().includes(q)));
+}
+
+async function addProducto() {
+  const nombre = document.getElementById('np2-nombre').value.trim();
+  if (!nombre) { showMsg('msg-productos', 'Introduce el nombre', 'error'); return; }
+  const btn = document.getElementById('btnAddProducto'); btn.disabled = true;
+  const res = await sb('productos', { method: 'POST', body: JSON.stringify({
+    nombre,
+    dosis_maxima: parseFloat(document.getElementById('np2-dosis').value) || null,
+    plazo_seguridad: parseInt(document.getElementById('np2-plazo').value) || null,
+    eco_caerm: document.getElementById('np2-eco-caerm').value,
+    eco_cvb: document.getElementById('np2-eco-cvb').value,
+    activo: true
+  })});
+  if (res.ok) { showMsg('msg-productos', `✅ "${nombre}" añadido`, 'success'); document.getElementById('np2-nombre').value = ''; document.getElementById('np2-dosis').value = ''; document.getElementById('np2-plazo').value = ''; await loadProductos(); }
+  else { showMsg('msg-productos', 'Error al añadir', 'error'); }
+  btn.disabled = false;
+}
+
+function openEdit(id) {
+  const p = allProductos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('edit-id').value = p.id;
+  document.getElementById('edit-nombre').value = p.nombre;
+  document.getElementById('edit-dosis').value = p.dosis_maxima || '';
+  document.getElementById('edit-plazo').value = p.plazo_seguridad || '';
+  document.getElementById('edit-eco-caerm').value = p.eco_caerm || 'ok';
+  document.getElementById('edit-eco-cvb').value = p.eco_cvb || 'ok';
+  document.getElementById('editModal').classList.add('show');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('show'); }
+async function saveProducto() {
+  const id = document.getElementById('edit-id').value;
+  const res = await sb(`productos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({
+    nombre: document.getElementById('edit-nombre').value.trim(),
+    dosis_maxima: parseFloat(document.getElementById('edit-dosis').value) || null,
+    plazo_seguridad: parseInt(document.getElementById('edit-plazo').value) || null,
+    eco_caerm: document.getElementById('edit-eco-caerm').value,
+    eco_cvb: document.getElementById('edit-eco-cvb').value
+  })});
+  if (res.ok) { showMsg('msg-productos', '✅ Producto actualizado', 'success'); closeModal(); await loadProductos(); }
+  else { showMsg('msg-productos', 'Error al guardar', 'error'); }
+}
+async function toggleProducto(id, activo) {
+  await sb(`productos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activo }) });
+  showMsg('msg-productos', activo ? '✅ Activado' : '✅ Desactivado', 'success');
+  await loadProductos();
+}
+
+// ── APLICADORES ──
+async function loadAplicadores() {
+  const res = await sb('aplicadores?order=nombre.asc&select=*');
+  allAplicadores = await res.json();
+  renderAplicadores(allAplicadores);
+  const act = allAplicadores.filter(a => a.activo).length;
+  document.getElementById('sa-activos').textContent = act;
+  document.getElementById('sa-inactivos').textContent = allAplicadores.length - act;
+  document.getElementById('sa-total').textContent = allAplicadores.length;
+}
+function renderAplicadores(items) {
+  document.getElementById('aplicadoresList').innerHTML = items.length ? items.map(a => `
+    <div class="list-item">
+      <div class="item-name">${a.nombre} <span class="badge ${a.activo ? 'active' : 'inactive'}">${a.activo ? 'Activo' : 'Inactivo'}</span></div>
+      <div class="item-actions">
+        ${a.activo ? `<button class="btn-sm btn-danger" onclick="toggleAplicador('${a.id}',false)">Desactivar</button>`
+                   : `<button class="btn-sm btn-success" onclick="toggleAplicador('${a.id}',true)">Activar</button>`}
+      </div>
+    </div>`).join('') : '<div class="loading">No hay aplicadores</div>';
+}
+async function addAplicador() {
+  const nombre = document.getElementById('newAplicador').value.trim().toUpperCase();
+  if (!nombre) { showMsg('msg-aplicadores', 'Introduce el nombre', 'error'); return; }
+  const btn = document.getElementById('btnAddAplicador'); btn.disabled = true;
+  const res = await sb('aplicadores', { method: 'POST', body: JSON.stringify({ nombre, activo: true }) });
+  if (res.ok) { showMsg('msg-aplicadores', `✅ "${nombre}" añadido`, 'success'); document.getElementById('newAplicador').value = ''; await loadAplicadores(); }
+  else { showMsg('msg-aplicadores', 'Error', 'error'); }
+  btn.disabled = false;
+}
+async function toggleAplicador(id, activo) {
+  await sb(`aplicadores?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activo }) });
+  showMsg('msg-aplicadores', activo ? '✅ Activado' : '✅ Desactivado', 'success');
+  await loadAplicadores();
+}
+
+// ── TRABAJADORES ──
+async function loadTrabajadores() {
+  const res = await sb('trabajadores?order=nombre.asc&select=*');
+  allTrabajadores = await res.json();
+  filterTrabajadores();
+  const hoy = new Date();
+  const act = allTrabajadores.filter(t => !t.fecha_baja || new Date(t.fecha_baja) >= hoy).length;
+  document.getElementById('st-activos').textContent = act;
+  document.getElementById('st-bajas').textContent = allTrabajadores.length - act;
+  document.getElementById('st-total').textContent = allTrabajadores.length;
+}
+function filterTrabajadores() {
+  const q = document.getElementById('searchTrabajadores').value.toLowerCase();
+  const items = allTrabajadores.filter(t => t.nombre.toLowerCase().includes(q));
+  const hoy = new Date();
+  document.getElementById('trabajadoresList').innerHTML = items.length ? items.map(t => {
+    const activo = !t.fecha_baja || new Date(t.fecha_baja) >= hoy;
+    const alta = t.fecha_alta ? new Date(t.fecha_alta).toLocaleDateString('es-ES') : '—';
+    const baja = t.fecha_baja ? new Date(t.fecha_baja).toLocaleDateString('es-ES') : '—';
+    return `<div class="list-item">
+      <div class="item-info">
+        <div class="item-name">${t.nombre} <span class="badge ${activo ? 'active' : 'inactive'}">${activo ? 'Activo' : 'Baja'}</span></div>
+        <div class="item-meta">Alta: ${alta}${t.fecha_baja ? ' · Baja: '+baja : ''}</div>
+      </div>
+      <div class="item-actions">
+        ${activo ? `<button class="btn-sm btn-danger" onclick="darDeBaja('${t.id}','${t.nombre}')">Dar de baja</button>`
+                 : `<button class="btn-sm btn-success" onclick="reactivar('${t.id}','${t.nombre}')">Reactivar</button>`}
+      </div>
+    </div>`;
+  }).join('') : '<div class="loading">No hay trabajadores</div>';
+}
+async function addTrabajador() {
+  const nombre = document.getElementById('newTrabajador').value.trim();
+  const fechaAlta = document.getElementById('newFechaAlta').value;
+  if (!nombre || !fechaAlta) { showMsg('msg-trabajadores', 'Introduce nombre y fecha de alta', 'error'); return; }
+  const btn = document.getElementById('btnAddTrabajador'); btn.disabled = true;
+  const res = await sb('trabajadores', { method: 'POST', body: JSON.stringify({ nombre, fecha_alta: fechaAlta }) });
+  if (res.ok) { showMsg('msg-trabajadores', `✅ "${nombre}" añadido`, 'success'); document.getElementById('newTrabajador').value = ''; await loadTrabajadores(); }
+  else { showMsg('msg-trabajadores', 'Error', 'error'); }
+  btn.disabled = false;
+}
+async function darDeBaja(id, nombre) {
+  const fecha = prompt(`Fecha de baja para ${nombre}:`, new Date().toISOString().split('T')[0]);
+  if (!fecha) return;
+  await sb(`trabajadores?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ fecha_baja: fecha }) });
+  showMsg('msg-trabajadores', `✅ ${nombre} dado de baja`, 'success');
+  await loadTrabajadores();
+}
+async function reactivar(id, nombre) {
+  if (!confirm(`¿Reactivar a ${nombre}?`)) return;
+  await sb(`trabajadores?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ fecha_baja: null }) });
+  showMsg('msg-trabajadores', `✅ ${nombre} reactivado`, 'success');
+  await loadTrabajadores();
+}
+
+// ── TAREAS DAVID ──
+async function loadTareasDavid() {
+  const res = await sb('tareas_trabajo?order=nombre.asc&select=*');
+  allTareasDavid = await res.json();
+  filterTareasDavid();
+  const act = allTareasDavid.filter(t => t.activa).length;
+  document.getElementById('std-activas').textContent = act;
+  document.getElementById('std-inactivas').textContent = allTareasDavid.length - act;
+  document.getElementById('std-total').textContent = allTareasDavid.length;
+}
+function filterTareasDavid() {
+  const q = document.getElementById('searchTareasDavid').value.toLowerCase();
+  const items = allTareasDavid.filter(t => t.nombre.toLowerCase().includes(q));
+  document.getElementById('tareasDavidList').innerHTML = items.map(t => `
+    <div class="list-item">
+      <div class="item-name">${t.nombre} <span class="badge ${t.activa ? 'active' : 'inactive'}">${t.activa ? 'Activa' : 'Inactiva'}</span></div>
+      <div class="item-actions">
+        ${t.activa ? `<button class="btn-sm btn-danger" onclick="toggleTareaDavid('${t.id}',false)">Desactivar</button>`
+                   : `<button class="btn-sm btn-success" onclick="toggleTareaDavid('${t.id}',true)">Activar</button>`}
+      </div>
+    </div>`).join('') || '<div class="loading">No hay tareas</div>';
+}
+async function addTareaDavid() {
+  const nombre = document.getElementById('newTareaDavid').value.trim();
+  if (!nombre) { showMsg('msg-tareas-david', 'Introduce el nombre', 'error'); return; }
+  const btn = document.getElementById('btnAddTareaDavid'); btn.disabled = true;
+  const res = await sb('tareas_trabajo', { method: 'POST', body: JSON.stringify({ nombre, orden: allTareasDavid.length+1, activa: true }) });
+  if (res.ok) { showMsg('msg-tareas-david', `✅ "${nombre}" añadida`, 'success'); document.getElementById('newTareaDavid').value = ''; await loadTareasDavid(); }
+  else { showMsg('msg-tareas-david', 'Error', 'error'); }
+  btn.disabled = false;
+}
+async function toggleTareaDavid(id, activa) {
+  await sb(`tareas_trabajo?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activa }) });
+  showMsg('msg-tareas-david', activa ? '✅ Activada' : '✅ Desactivada', 'success');
+  await loadTareasDavid();
+}
+
+// ── ENCARGADOS ──
+async function loadEncargados() {
+  const res = await sb('encargados?order=nombre.asc&select=*');
+  allEncargados = await res.json();
+  const act = allEncargados.filter(e => e.activo).length;
+  document.getElementById('se-activos').textContent = act;
+  document.getElementById('se-inactivos').textContent = allEncargados.length - act;
+  document.getElementById('se-total').textContent = allEncargados.length;
+  document.getElementById('encargadosList').innerHTML = allEncargados.map(e => `
+    <div class="list-item">
+      <div class="item-info">
+        <div class="item-name">${e.nombre} <span class="badge ${e.activo ? 'active' : 'inactive'}">${e.activo ? 'Activo' : 'Inactivo'}</span> <span class="pin-badge">PIN: ${e.pin || '—'}</span></div>
+      </div>
+      <div class="item-actions">
+        <button class="btn-sm btn-pin" onclick="cambiarPin('${e.id}','${e.nombre}')">Cambiar PIN</button>
+        ${e.activo ? `<button class="btn-sm btn-danger" onclick="toggleEncargado('${e.id}',false)">Desactivar</button>`
+                   : `<button class="btn-sm btn-success" onclick="toggleEncargado('${e.id}',true)">Activar</button>`}
+      </div>
+    </div>`).join('') || '<div class="loading">No hay encargados</div>';
+}
+async function addEncargado() {
+  const nombre = document.getElementById('newEncargado').value.trim().toUpperCase();
+  const pin = document.getElementById('newPin').value.trim();
+  if (!nombre || pin.length < 4) { showMsg('msg-encargados', 'Introduce nombre y PIN de 4 dígitos', 'error'); return; }
+  const btn = document.getElementById('btnAddEncargado'); btn.disabled = true;
+  const res = await sb('encargados', { method: 'POST', body: JSON.stringify({ nombre, pin, activo: true }) });
+  if (res.ok) { showMsg('msg-encargados', `✅ "${nombre}" añadido`, 'success'); document.getElementById('newEncargado').value = ''; document.getElementById('newPin').value = ''; await loadEncargados(); }
+  else { showMsg('msg-encargados', 'Error', 'error'); }
+  btn.disabled = false;
+}
+async function cambiarPin(id, nombre) {
+  const pin = prompt(`Nuevo PIN para ${nombre}:`);
+  if (!pin || pin.length < 4) return;
+  await sb(`encargados?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ pin }) });
+  showMsg('msg-encargados', `✅ PIN de ${nombre} actualizado`, 'success');
+  await loadEncargados();
+}
+async function toggleEncargado(id, activo) {
+  await sb(`encargados?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activo }) });
+  showMsg('msg-encargados', activo ? '✅ Activado' : '✅ Desactivado', 'success');
+  await loadEncargados();
+}
+
+// ── TAREAS ENCARGADOS ──
+async function loadTareasEnc() {
+  const res = await sb('tareas_encargados?order=orden.asc,nombre.asc&select=*');
+  allTareasEnc = await res.json();
+  filterTareasEnc();
+  const act = allTareasEnc.filter(t => t.activa).length;
+  document.getElementById('ste-activas').textContent = act;
+  document.getElementById('ste-inactivas').textContent = allTareasEnc.length - act;
+  document.getElementById('ste-total').textContent = allTareasEnc.length;
+}
+function filterTareasEnc() {
+  const q = document.getElementById('searchTareasEnc').value.toLowerCase();
+  const items = allTareasEnc.filter(t => t.nombre.toLowerCase().includes(q));
+  document.getElementById('tareasEncList').innerHTML = items.map(t => `
+    <div class="list-item">
+      <div class="item-name">${t.nombre} <span class="badge ${t.activa ? 'active' : 'inactive'}">${t.activa ? 'Activa' : 'Inactiva'}</span></div>
+      <div class="item-actions">
+        ${t.activa ? `<button class="btn-sm btn-danger" onclick="toggleTareaEnc('${t.id}',false)">Desactivar</button>`
+                   : `<button class="btn-sm btn-success" onclick="toggleTareaEnc('${t.id}',true)">Activar</button>`}
+      </div>
+    </div>`).join('') || '<div class="loading">No hay tareas</div>';
+}
+async function addTareaEnc() {
+  const nombre = document.getElementById('newTareaEnc').value.trim();
+  if (!nombre) { showMsg('msg-tareas-enc', 'Introduce el nombre', 'error'); return; }
+  const btn = document.getElementById('btnAddTareaEnc'); btn.disabled = true;
+  const res = await sb('tareas_encargados', { method: 'POST', body: JSON.stringify({ nombre, orden: allTareasEnc.length+1, activa: true }) });
+  if (res.ok) { showMsg('msg-tareas-enc', `✅ "${nombre}" añadida`, 'success'); document.getElementById('newTareaEnc').value = ''; await loadTareasEnc(); }
+  else { showMsg('msg-tareas-enc', 'Error', 'error'); }
+  btn.disabled = false;
+}
+async function toggleTareaEnc(id, activa) {
+  await sb(`tareas_encargados?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activa }) });
+  showMsg('msg-tareas-enc', activa ? '✅ Activada' : '✅ Desactivada', 'success');
+  await loadTareasEnc();
+}
+
+// Init date
+document.getElementById('newFechaAlta').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
