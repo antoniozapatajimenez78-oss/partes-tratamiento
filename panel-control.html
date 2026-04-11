@@ -408,7 +408,7 @@
 <script>
 const SUPABASE_URL = 'https://jecqfntpvzwipjcleqbl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3FmbnRwdnp3aXBqY2xlcWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzE2NjIsImV4cCI6MjA5MDQ0NzY2Mn0.J26k1VElLscwOxhGTBXpyw-OnXZ-BZOiBW5vCG3CreI';
-const PASSWORD = 'agroinver2026';
+const PASSWORD = 'zapata';
 
 const pages = {
   'fincas': { title: 'Fincas & Cultivos', sub: 'Gestión de fincas, cultivos y parcelas', load: loadFincas },
@@ -550,7 +550,7 @@ async function addParcela() {
 
 // ── PRODUCTOS ──
 async function loadProductos() {
-  const res = await sb('productos?order=nombre.asc&select=*');
+  const res = await sb('productos?order=nombre_comercial.asc&select=*');
   allProductos = await res.json();
   renderProductos(allProductos);
   const act = allProductos.filter(p => p.activo !== false).length;
@@ -571,8 +571,9 @@ function renderProductos(productos) {
   list.innerHTML = productos.map(p => `
     <div class="product-item">
       <div>
-        <div class="product-name">${p.nombre} <span class="badge ${p.activo !== false ? 'active' : 'inactive'}">${p.activo !== false ? 'Activo' : 'Inactivo'}</span></div>
+        <div class="product-name">${p.nombre_comercial} <span class="badge ${p.activo !== false ? 'active' : 'inactive'}">${p.activo !== false ? 'Activo' : 'Inactivo'}</span></div>
         <div class="product-meta">
+          ${p.materia_activa ? `<span>${p.materia_activa}</span>` : ''}
           ${p.dosis_maxima ? `<span>Dosis: ${p.dosis_maxima}</span>` : '<span style="opacity:0.5">Sin dosis</span>'}
           ${p.plazo_seguridad ? `<span>Plazo: ${p.plazo_seguridad}d</span>` : ''}
           CAERM: ${ecoBadge(p.eco_caerm)} CVB: ${ecoBadge(p.eco_cvb)}
@@ -589,7 +590,7 @@ function renderProductos(productos) {
 
 function filterProductos() {
   const q = document.getElementById('searchProductos').value.toLowerCase();
-  renderProductos(allProductos.filter(p => p.nombre.toLowerCase().includes(q)));
+  renderProductos(allProductos.filter(p => (p.nombre_comercial || '').toLowerCase().includes(q)));
 }
 
 async function addProducto() {
@@ -597,7 +598,7 @@ async function addProducto() {
   if (!nombre) { showMsg('msg-productos', 'Introduce el nombre', 'error'); return; }
   const btn = document.getElementById('btnAddProducto'); btn.disabled = true;
   const res = await sb('productos', { method: 'POST', body: JSON.stringify({
-    nombre,
+    nombre_comercial: nombre,
     dosis_maxima: parseFloat(document.getElementById('np2-dosis').value) || null,
     plazo_seguridad: parseInt(document.getElementById('np2-plazo').value) || null,
     eco_caerm: document.getElementById('np2-eco-caerm').value,
@@ -613,7 +614,7 @@ function openEdit(id) {
   const p = allProductos.find(x => x.id === id);
   if (!p) return;
   document.getElementById('edit-id').value = p.id;
-  document.getElementById('edit-nombre').value = p.nombre;
+  document.getElementById('edit-nombre').value = p.nombre_comercial;
   document.getElementById('edit-dosis').value = p.dosis_maxima || '';
   document.getElementById('edit-plazo').value = p.plazo_seguridad || '';
   document.getElementById('edit-eco-caerm').value = p.eco_caerm || 'ok';
@@ -624,7 +625,7 @@ function closeModal() { document.getElementById('editModal').classList.remove('s
 async function saveProducto() {
   const id = document.getElementById('edit-id').value;
   const res = await sb(`productos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({
-    nombre: document.getElementById('edit-nombre').value.trim(),
+    nombre_comercial: document.getElementById('edit-nombre').value.trim(),
     dosis_maxima: parseFloat(document.getElementById('edit-dosis').value) || null,
     plazo_seguridad: parseInt(document.getElementById('edit-plazo').value) || null,
     eco_caerm: document.getElementById('edit-eco-caerm').value,
