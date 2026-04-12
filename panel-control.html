@@ -520,13 +520,25 @@ function renderFincas() {
         <div style="display:flex;gap:0.4rem;align-items:center">
           <span class="badge ${f.consejo === 'CAERM' ? 'caerm' : 'cvb'}">${f.consejo}</span>
           <span class="badge ${f.activa ? 'active' : 'inactive'}">${f.activa ? 'Activa' : 'Inactiva'}</span>
+          <button class="btn-sm btn-danger" onclick="deleteFinca('${f.id}','${f.nombre}')">🗑️</button>
         </div>
       </div>
       ${cultivos.map(c => {
         const parcelas = allParcelas.filter(p => p.cultivo_id === c.id);
         return `<div class="cultivo-row">
-          <div class="cultivo-name">🌱 ${c.nombre}</div>
-          <div class="parcelas-wrap">${parcelas.map(p => `<span class="parcela-chip">${p.nombre}</span>`).join('')}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">
+            <div class="cultivo-name">🌱 ${c.nombre}</div>
+            <button class="btn-sm btn-danger" style="font-size:0.68rem" onclick="deleteCultivo('${c.id}','${c.nombre}')">🗑️</button>
+          </div>
+          <div class="parcelas-wrap">
+            ${parcelas.map(p => `
+              <div style="display:flex;align-items:center;gap:0.3rem;background:#f0f5f0;border:1px solid var(--border);border-radius:6px;padding:0.15rem 0.4rem">
+                <span style="font-size:0.75rem">${p.nombre}</span>
+                <span style="font-size:0.72rem;color:var(--text-mid)">${p.superficie ? p.superficie+'ha' : '—'}</span>
+                <button style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:var(--accent);padding:0" onclick="editSuperficie('${p.id}','${p.nombre}',${p.superficie||0})">✏️</button>
+                <button style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:var(--red);padding:0" onclick="deleteParcela('${p.id}','${p.nombre}')">🗑️</button>
+              </div>`).join('')}
+          </div>
         </div>`;
       }).join('')}
     </div>`;
@@ -560,7 +572,34 @@ async function addCultivo() {
   btn.disabled = false;
 }
 
-async function addParcela() {
+async function editSuperficie(id, nombre, actual) {
+  const nueva = prompt(`Superficie de "${nombre}" (ha):`, actual || '');
+  if (nueva === null) return;
+  const res = await sb(`parcelas?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ superficie: parseFloat(nueva) || null }) });
+  if (res.ok) { showMsg('msg-fincas', `✅ Superficie de "${nombre}" actualizada`, 'success'); await loadFincas(); }
+  else { showMsg('msg-fincas', 'Error al actualizar', 'error'); }
+}
+
+async function deleteFinca(id, nombre) {
+  if (!confirm(`¿Eliminar la finca "${nombre}" y todos sus cultivos y parcelas?`)) return;
+  const res = await sb(`fincas?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-fincas', `✅ Finca "${nombre}" eliminada`, 'success'); await loadFincas(); }
+  else { showMsg('msg-fincas', 'Error al eliminar', 'error'); }
+}
+
+async function deleteCultivo(id, nombre) {
+  if (!confirm(`¿Eliminar el cultivo "${nombre}" y todas sus parcelas?`)) return;
+  const res = await sb(`cultivos?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-fincas', `✅ Cultivo "${nombre}" eliminado`, 'success'); await loadFincas(); }
+  else { showMsg('msg-fincas', 'Error al eliminar', 'error'); }
+}
+
+async function deleteParcela(id, nombre) {
+  if (!confirm(`¿Eliminar la parcela "${nombre}"?`)) return;
+  const res = await sb(`parcelas?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-fincas', `✅ Parcela "${nombre}" eliminada`, 'success'); await loadFincas(); }
+  else { showMsg('msg-fincas', 'Error al eliminar', 'error'); }
+}
   const nombre = document.getElementById('np-nombre').value.trim();
   const cultivo_id = document.getElementById('np-cultivo').value;
   if (!nombre || !cultivo_id) { showMsg('msg-fincas', 'Selecciona cultivo e introduce nombre', 'error'); return; }
@@ -680,6 +719,7 @@ function renderAplicadores(items) {
       <div class="item-actions">
         ${a.activo ? `<button class="btn-sm btn-danger" onclick="toggleAplicador('${a.id}',false)">Desactivar</button>`
                    : `<button class="btn-sm btn-success" onclick="toggleAplicador('${a.id}',true)">Activar</button>`}
+        <button class="btn-sm btn-danger" onclick="deleteAplicador('${a.id}','${a.nombre}')">🗑️</button>
       </div>
     </div>`).join('') : '<div class="loading">No hay aplicadores</div>';
 }
@@ -692,6 +732,13 @@ async function addAplicador() {
   else { showMsg('msg-aplicadores', 'Error', 'error'); }
   btn.disabled = false;
 }
+async function deleteAplicador(id, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}"?`)) return;
+  const res = await sb(`aplicadores?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-aplicadores', `✅ "${nombre}" eliminado`, 'success'); await loadAplicadores(); }
+  else { showMsg('msg-aplicadores', 'Error al eliminar', 'error'); }
+}
+
 async function toggleAplicador(id, activo) {
   await sb(`aplicadores?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activo }) });
   showMsg('msg-aplicadores', activo ? '✅ Activado' : '✅ Desactivado', 'success');
@@ -725,6 +772,7 @@ function filterTrabajadores() {
       <div class="item-actions">
         ${activo ? `<button class="btn-sm btn-danger" onclick="darDeBaja('${t.id}','${t.nombre}')">Dar de baja</button>`
                  : `<button class="btn-sm btn-success" onclick="reactivar('${t.id}','${t.nombre}')">Reactivar</button>`}
+        <button class="btn-sm btn-danger" onclick="deleteTrabajador('${t.id}','${t.nombre}')">🗑️</button>
       </div>
     </div>`;
   }).join('') : '<div class="loading">No hay trabajadores</div>';
@@ -739,6 +787,13 @@ async function addTrabajador() {
   else { showMsg('msg-trabajadores', 'Error', 'error'); }
   btn.disabled = false;
 }
+async function deleteTrabajador(id, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}"? Esta acción no se puede deshacer.`)) return;
+  const res = await sb(`trabajadores?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-trabajadores', `✅ "${nombre}" eliminado`, 'success'); await loadTrabajadores(); }
+  else { showMsg('msg-trabajadores', 'Error al eliminar', 'error'); }
+}
+
 async function darDeBaja(id, nombre) {
   const fecha = prompt(`Fecha de baja para ${nombre}:`, new Date().toISOString().split('T')[0]);
   if (!fecha) return;
@@ -772,9 +827,17 @@ function filterTareasDavid() {
       <div class="item-actions">
         ${t.activa ? `<button class="btn-sm btn-danger" onclick="toggleTareaDavid('${t.id}',false)">Desactivar</button>`
                    : `<button class="btn-sm btn-success" onclick="toggleTareaDavid('${t.id}',true)">Activar</button>`}
+        <button class="btn-sm btn-danger" onclick="deleteTareaDavid('${t.id}','${t.nombre}')">🗑️</button>
       </div>
     </div>`).join('') || '<div class="loading">No hay tareas</div>';
 }
+async function deleteTareaDavid(id, nombre) {
+  if (!confirm(`¿Eliminar la tarea "${nombre}"?`)) return;
+  const res = await sb(`tareas_trabajo?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-tareas-david', `✅ "${nombre}" eliminada`, 'success'); await loadTareasDavid(); }
+  else { showMsg('msg-tareas-david', 'Error al eliminar', 'error'); }
+}
+
 async function addTareaDavid() {
   const nombre = document.getElementById('newTareaDavid').value.trim();
   if (!nombre) { showMsg('msg-tareas-david', 'Introduce el nombre', 'error'); return; }
@@ -807,9 +870,17 @@ async function loadEncargados() {
         <button class="btn-sm btn-pin" onclick="cambiarPin('${e.id}','${e.nombre}')">Cambiar PIN</button>
         ${e.activo ? `<button class="btn-sm btn-danger" onclick="toggleEncargado('${e.id}',false)">Desactivar</button>`
                    : `<button class="btn-sm btn-success" onclick="toggleEncargado('${e.id}',true)">Activar</button>`}
+        <button class="btn-sm btn-danger" onclick="deleteEncargado('${e.id}','${e.nombre}')">🗑️</button>
       </div>
     </div>`).join('') || '<div class="loading">No hay encargados</div>';
 }
+async function deleteEncargado(id, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}"?`)) return;
+  const res = await sb(`encargados?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-encargados', `✅ "${nombre}" eliminado`, 'success'); await loadEncargados(); }
+  else { showMsg('msg-encargados', 'Error al eliminar', 'error'); }
+}
+
 async function addEncargado() {
   const nombre = document.getElementById('newEncargado').value.trim().toUpperCase();
   const pin = document.getElementById('newPin').value.trim();
@@ -852,9 +923,17 @@ function filterTareasEnc() {
       <div class="item-actions">
         ${t.activa ? `<button class="btn-sm btn-danger" onclick="toggleTareaEnc('${t.id}',false)">Desactivar</button>`
                    : `<button class="btn-sm btn-success" onclick="toggleTareaEnc('${t.id}',true)">Activar</button>`}
+        <button class="btn-sm btn-danger" onclick="deleteTareaEnc('${t.id}','${t.nombre}')">🗑️</button>
       </div>
     </div>`).join('') || '<div class="loading">No hay tareas</div>';
 }
+async function deleteTareaEnc(id, nombre) {
+  if (!confirm(`¿Eliminar la tarea "${nombre}"?`)) return;
+  const res = await sb(`tareas_encargados?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-tareas-enc', `✅ "${nombre}" eliminada`, 'success'); await loadTareasEnc(); }
+  else { showMsg('msg-tareas-enc', 'Error al eliminar', 'error'); }
+}
+
 async function addTareaEnc() {
   const nombre = document.getElementById('newTareaEnc').value.trim();
   if (!nombre) { showMsg('msg-tareas-enc', 'Introduce el nombre', 'error'); return; }
@@ -884,9 +963,17 @@ async function loadTareasTrat() {
       <div class="item-actions">
         ${t.activa ? `<button class="btn-sm btn-danger" onclick="toggleTareaTrat('${t.id}',false)">Desactivar</button>`
                    : `<button class="btn-sm btn-success" onclick="toggleTareaTrat('${t.id}',true)">Activar</button>`}
+        <button class="btn-sm btn-danger" onclick="deleteTareaTrat('${t.id}','${t.nombre}')">🗑️</button>
       </div>
     </div>`).join('') || '<div class="loading">No hay tareas</div>';
 }
+async function deleteTareaTrat(id, nombre) {
+  if (!confirm(`¿Eliminar la tarea "${nombre}"?`)) return;
+  const res = await sb(`tareas_tratamiento?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-tareas-trat', `✅ "${nombre}" eliminada`, 'success'); await loadTareasTrat(); }
+  else { showMsg('msg-tareas-trat', 'Error al eliminar', 'error'); }
+}
+
 async function addTareaTrat() {
   const nombre = document.getElementById('newTareaTrat').value.trim().toUpperCase();
   if (!nombre) { showMsg('msg-tareas-trat', 'Introduce el nombre', 'error'); return; }
