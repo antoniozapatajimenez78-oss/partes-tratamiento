@@ -600,6 +600,8 @@ async function deleteParcela(id, nombre) {
   if (res.ok) { showMsg('msg-fincas', `✅ Parcela "${nombre}" eliminada`, 'success'); await loadFincas(); }
   else { showMsg('msg-fincas', 'Error al eliminar', 'error'); }
 }
+
+async function addParcela() {
   const nombre = document.getElementById('np-nombre').value.trim();
   const cultivo_id = document.getElementById('np-cultivo').value;
   if (!nombre || !cultivo_id) { showMsg('msg-fincas', 'Selecciona cultivo e introduce nombre', 'error'); return; }
