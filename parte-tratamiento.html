@@ -1235,7 +1235,14 @@ async function sbFetch(endpoint, options = {}) {
 // Load all data from Supabase on startup
 async function loadDatosFromDB() {
   try {
-    // Load fincas, cultivos, parcelas
+    // Use cache if available
+    const cached = localStorage.getItem('cache_tratamiento_datos');
+    if (cached) {
+      const { dbFincas, dbCultivos, dbParcelas, dbAplicadores, dbTareas } = JSON.parse(cached);
+      buildDatosFromCache(dbFincas, dbCultivos, dbParcelas, dbAplicadores, dbTareas);
+    }
+
+    // Fetch fresh data in background
     const [rf, rc, rp, ra, rt] = await Promise.all([
       sbFetch('fincas?activa=eq.true&order=nombre.asc&select=*'),
       sbFetch('cultivos?activo=eq.true&order=nombre.asc&select=*'),
@@ -1250,36 +1257,8 @@ async function loadDatosFromDB() {
     const dbAplicadores = await ra.json();
     const dbTareas = await rt.json();
 
-    // Build fincas array
-    fincas.length = 0;
-    dbFincas.forEach(f => {
-      fincas.push(f.nombre);
-      fincaConsejo[f.nombre] = f.consejo;
-      fincaData[f.nombre] = {};
-      superficies[f.nombre] = {};
-    });
-
-    // Build fincaData structure + superficies
-    dbCultivos.forEach(c => {
-      const finca = dbFincas.find(f => f.id === c.finca_id);
-      if (finca && fincaData[finca.nombre]) {
-        fincaData[finca.nombre][c.nombre] = [];
-        dbParcelas.forEach(p => {
-          if (p.cultivo_id === c.id) {
-            fincaData[finca.nombre][c.nombre].push(p.nombre);
-            if (p.superficie) superficies[finca.nombre][p.nombre] = p.superficie;
-          }
-        });
-      }
-    });
-
-    // Build aplicadores array
-    aplicadores.length = 0;
-    dbAplicadores.forEach(a => aplicadores.push(a.nombre));
-
-    // Build tareas array
-    tareas.length = 0;
-    dbTareas.forEach(t => tareas.push(t.nombre));
+    localStorage.setItem('cache_tratamiento_datos', JSON.stringify({ dbFincas, dbCultivos, dbParcelas, dbAplicadores, dbTareas }));
+    buildDatosFromCache(dbFincas, dbCultivos, dbParcelas, dbAplicadores, dbTareas);
 
     console.log(`✅ ${fincas.length} fincas, ${aplicadores.length} aplicadores, ${tareas.length} tareas cargados`);
   } catch(e) {
@@ -1287,33 +1266,70 @@ async function loadDatosFromDB() {
   }
 }
 
+function buildDatosFromCache(dbFincas, dbCultivos, dbParcelas, dbAplicadores, dbTareas) {
+  fincas.length = 0;
+  dbFincas.forEach(f => {
+    fincas.push(f.nombre);
+    fincaConsejo[f.nombre] = f.consejo;
+    fincaData[f.nombre] = {};
+    superficies[f.nombre] = {};
+  });
+  dbCultivos.forEach(c => {
+    const finca = dbFincas.find(f => f.id === c.finca_id);
+    if (finca && fincaData[finca.nombre]) {
+      fincaData[finca.nombre][c.nombre] = [];
+      dbParcelas.forEach(p => {
+        if (p.cultivo_id === c.id) {
+          fincaData[finca.nombre][c.nombre].push(p.nombre);
+          if (p.superficie) superficies[finca.nombre][p.nombre] = p.superficie;
+        }
+      });
+    }
+  });
+  aplicadores.length = 0;
+  dbAplicadores.forEach(a => aplicadores.push(a.nombre));
+  tareas.length = 0;
+  dbTareas.forEach(t => tareas.push(t.nombre));
+}
+
 async function loadProductosFromDB() {
   try {
+    // Use cache if available
+    const cached = localStorage.getItem('cache_productos');
+    if (cached) {
+      const data = JSON.parse(cached);
+      buildProductos(data);
+    }
+
     const res = await sbFetch('productos?activo=eq.true&order=nombre_comercial.asc&select=nombre_comercial,materia_activa,eco_caerm,eco_cvb,dosis_maxima,plazo_seguridad');
     if (!res.ok) throw new Error('Error cargando productos');
     const data = await res.json();
     if (data && data.length > 0) {
-      fitosanitarios.length = 0;
-      data.forEach(p => {
-        const ecoVal = state.finca
-          ? (fincaConsejo[state.finca] === 'CAERM' ? p.eco_caerm : p.eco_cvb)
-          : null;
-        fitosanitarios.push({
-          n: p.nombre_comercial,
-          ma: p.materia_activa || '',
-          eco: ecoVal,
-          eco_caerm: p.eco_caerm,
-          eco_cvb: p.eco_cvb,
-          dosis: p.dosis_maxima,
-          plazo: p.plazo_seguridad
-        });
-      });
-      fitosanitarios.sort((a,b) => a.n.localeCompare(b.n));
-      console.log(`✅ ${fitosanitarios.length} productos cargados desde Supabase`);
+      localStorage.setItem('cache_productos', JSON.stringify(data));
+      buildProductos(data);
     }
   } catch(e) {
     console.warn('⚠️ No se pudieron cargar productos desde Supabase:', e);
   }
+}
+
+function buildProductos(data) {
+  fitosanitarios.length = 0;
+  data.forEach(p => {
+    const ecoVal = state.finca
+      ? (fincaConsejo[state.finca] === 'CAERM' ? p.eco_caerm : p.eco_cvb)
+      : null;
+    fitosanitarios.push({
+      n: p.nombre_comercial,
+      ma: p.materia_activa || '',
+      eco: ecoVal,
+      eco_caerm: p.eco_caerm,
+      eco_cvb: p.eco_cvb,
+      dosis: p.dosis_maxima,
+      plazo: p.plazo_seguridad
+    });
+  });
+  fitosanitarios.sort((a,b) => a.n.localeCompare(b.n));
 }
 
 async function saveParteToSupabase(parte) {
@@ -1511,15 +1527,35 @@ document.getElementById('mainForm').addEventListener('submit', function(e) {
   showReview(parteData);
 });
 
-// Init: load all data from DB then build form
-Promise.all([loadDatosFromDB(), loadProductosFromDB()]).then(() => {
+// Init: use cache if available for instant load
+const hasCacheTrat = localStorage.getItem('cache_tratamiento_datos');
+const hasCacheProductos = localStorage.getItem('cache_productos');
+
+if (hasCacheTrat && hasCacheProductos) {
+  // Load from cache instantly
+  const { dbFincas, dbCultivos, dbParcelas, dbAplicadores, dbTareas } = JSON.parse(hasCacheTrat);
+  buildDatosFromCache(dbFincas, dbCultivos, dbParcelas, dbAplicadores, dbTareas);
+  buildProductos(JSON.parse(hasCacheProductos));
   buildRadioGrid('aplicador-grid', aplicadores, 'aplicador');
   buildRadioGrid('tarea-grid', tareas, 'tarea');
   buildRadioGrid('finca-grid', fincas, 'finca');
   buildProducts();
   document.getElementById('loading-screen').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
-});
+  // Refresh in background
+  loadDatosFromDB();
+  loadProductosFromDB();
+} else {
+  // First load — wait for all data
+  Promise.all([loadDatosFromDB(), loadProductosFromDB()]).then(() => {
+    buildRadioGrid('aplicador-grid', aplicadores, 'aplicador');
+    buildRadioGrid('tarea-grid', tareas, 'tarea');
+    buildRadioGrid('finca-grid', fincas, 'finca');
+    buildProducts();
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+  });
+}
 
 function clearForm() {
   if (!confirm('¿Seguro que quieres limpiar el formulario?')) return;
