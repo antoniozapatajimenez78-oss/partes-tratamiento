@@ -457,6 +457,11 @@
 </div>
 
 <div class="form-container">
+  <div id="loading-screen" style="text-align:center;padding:3rem 1rem;color:var(--text-mid)">
+    <div style="font-size:2rem;margin-bottom:0.75rem">🌿</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.1em;color:var(--green-dark)">Cargando datos...</div>
+  </div>
+  <div id="app-content" style="display:none">
   <p class="required-note"><span style="color:#c0392b">*</span> Campos obligatorios</p>
 
   <form id="mainForm" novalidate>
@@ -1509,8 +1514,11 @@ document.getElementById('mainForm').addEventListener('submit', function(e) {
 // Init: load all data from DB then build form
 Promise.all([loadDatosFromDB(), loadProductosFromDB()]).then(() => {
   buildRadioGrid('aplicador-grid', aplicadores, 'aplicador');
+  buildRadioGrid('tarea-grid', tareas, 'tarea');
   buildRadioGrid('finca-grid', fincas, 'finca');
   buildProducts();
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
 });
 
 function clearForm() {
