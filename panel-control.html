@@ -193,6 +193,7 @@
       <div class="nav-section">La Pacheca</div>
       <div class="nav-item" onclick="showPage('trabajadores')"><span class="nav-icon">👷</span> Trabajadores</div>
       <div class="nav-item" onclick="showPage('tareas-david')"><span class="nav-icon">📋</span> Tareas La Pacheca</div>
+      <div class="nav-item" onclick="showPage('incidencias')"><span class="nav-icon">⚠️</span> Incidencias</div>
       <div class="nav-section">Encargados</div>
       <div class="nav-item" onclick="showPage('encargados')"><span class="nav-icon">👔</span> Encargados & PINs</div>
       <div class="nav-item" onclick="showPage('tareas-encargados')"><span class="nav-icon">📋</span> Tareas Encargados</div>
@@ -361,6 +362,43 @@
       </div>
     </div>
 
+    <!-- PAGE: INCIDENCIAS -->
+    <div class="page" id="page-incidencias">
+      <div class="msg" id="msg-incidencias"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num amber" id="si-hoy">—</div><div class="stat-label">Hoy</div></div>
+        <div class="stat-card"><div class="stat-num red" id="si-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nueva incidencia</div>
+        <div class="form-row">
+          <div class="field-group">
+            <label>Trabajador</label>
+            <select id="ni-trabajador"><option value="">Selecciona...</option></select>
+          </div>
+          <div class="field-group">
+            <label>Fecha</label>
+            <input type="date" id="ni-fecha">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field-group">
+            <label>Hora de llegada</label>
+            <input type="time" id="ni-hora">
+          </div>
+          <div class="field-group">
+            <label>Observaciones</label>
+            <input type="text" id="ni-obs" placeholder="Motivo, notas...">
+          </div>
+        </div>
+        <button class="btn-primary" id="btnAddIncidencia" onclick="addIncidencia()">+ Registrar incidencia</button>
+      </div>
+      <div class="card">
+        <div class="card-title">⚠️ Incidencias registradas</div>
+        <div id="incidenciasList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
     <!-- PAGE: ENCARGADOS -->
     <div class="page" id="page-encargados">
       <div class="msg" id="msg-encargados"></div>
@@ -430,6 +468,8 @@
 <script>
 const SUPABASE_URL = 'https://jecqfntpvzwipjcleqbl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3FmbnRwdnp3aXBqY2xlcWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzE2NjIsImV4cCI6MjA5MDQ0NzY2Mn0.J26k1VElLscwOxhGTBXpyw-OnXZ-BZOiBW5vCG3CreI';
+const SHEETS_URL_DAVID = 'https://script.google.com/macros/s/AKfycbyJP-qHzkACtZKx0LQiOQgtY42rQWuqMQBlispiVAJbJNnA0__P92CNVO7tqZdHEVJD/exec';
+let allIncidencias = [];
 const PASSWORD = 'zapata';
 
 const pages = {
@@ -439,6 +479,7 @@ const pages = {
   'aplicadores': { title: 'Aplicadores', sub: 'Gestión de aplicadores autorizados', load: loadAplicadores },
   'trabajadores': { title: 'Trabajadores La Pacheca', sub: 'Altas y bajas de trabajadores', load: loadTrabajadores },
   'tareas-david': { title: 'Tareas La Pacheca', sub: 'Tareas disponibles en el parte de David', load: loadTareasDavid },
+  'incidencias': { title: 'Incidencias', sub: 'Registro de llegadas tardías de trabajadores', load: loadIncidencias },
   'encargados': { title: 'Encargados & PINs', sub: 'Gestión de encargados y acceso por PIN', load: loadEncargados },
   'tareas-encargados': { title: 'Tareas Encargados', sub: 'Tareas disponibles en los partes de encargados', load: loadTareasEnc }
 };
@@ -989,6 +1030,73 @@ async function toggleTareaTrat(id, activa) {
   await sb(`tareas_tratamiento?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ activa }) });
   showMsg('msg-tareas-trat', activa ? '✅ Activada' : '✅ Desactivada', 'success');
   await loadTareasTrat();
+}
+
+// ── INCIDENCIAS ──
+async function loadIncidencias() {
+  const res = await sb('incidencias?order=fecha.desc,created_at.desc&select=*');
+  allIncidencias = await res.json();
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('ni-fecha').value = hoy;
+  const incHoy = allIncidencias.filter(i => i.fecha === hoy).length;
+  document.getElementById('si-hoy').textContent = incHoy;
+  document.getElementById('si-total').textContent = allIncidencias.length;
+
+  // Populate trabajador selector
+  const tRes = await sb('trabajadores?fecha_baja=is.null&order=nombre.asc&select=nombre');
+  const trabajadores = await tRes.json();
+  document.getElementById('ni-trabajador').innerHTML = '<option value="">Selecciona...</option>' +
+    trabajadores.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
+
+  document.getElementById('incidenciasList').innerHTML = allIncidencias.length === 0
+    ? '<div class="loading">No hay incidencias</div>'
+    : allIncidencias.map(i => `
+    <div class="list-item">
+      <div>
+        <div class="item-name">⚠️ ${i.trabajador} <span class="badge inactive">${i.fecha}</span></div>
+        <div class="item-meta">${i.hora_real ? 'Llegó a las ' + i.hora_real : ''}${i.observaciones ? ' · ' + i.observaciones : ''}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn-sm btn-danger" onclick="deleteIncidencia('${i.id}','${i.trabajador}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+async function addIncidencia() {
+  const trabajador = document.getElementById('ni-trabajador').value;
+  const fecha = document.getElementById('ni-fecha').value;
+  const hora_real = document.getElementById('ni-hora').value;
+  const observaciones = document.getElementById('ni-obs').value.trim();
+
+  if (!trabajador || !fecha) { showMsg('msg-incidencias', 'Selecciona trabajador y fecha', 'error'); return; }
+
+  const btn = document.getElementById('btnAddIncidencia'); btn.disabled = true;
+
+  // Save to Supabase
+  const res = await sb('incidencias', { method: 'POST', body: JSON.stringify({ trabajador, fecha, hora_real: hora_real || null, observaciones: observaciones || null }) });
+
+  if (res.ok) {
+    // Send to Sheets
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify({ tipo: 'incidencia', trabajador, fecha, hora_real, observaciones }));
+    fetch(SHEETS_URL_DAVID, { method: 'POST', mode: 'no-cors', body: formData });
+
+    showMsg('msg-incidencias', `✅ Incidencia de "${trabajador}" registrada`, 'success');
+    document.getElementById('ni-trabajador').value = '';
+    document.getElementById('ni-hora').value = '';
+    document.getElementById('ni-obs').value = '';
+    await loadIncidencias();
+  } else {
+    showMsg('msg-incidencias', 'Error al registrar', 'error');
+  }
+  btn.disabled = false;
+}
+
+async function deleteIncidencia(id, nombre) {
+  if (!confirm(`¿Eliminar la incidencia de "${nombre}"?`)) return;
+  const res = await sb(`incidencias?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { showMsg('msg-incidencias', '✅ Incidencia eliminada', 'success'); await loadIncidencias(); }
+  else { showMsg('msg-incidencias', 'Error al eliminar', 'error'); }
 }
 
 // Init date
