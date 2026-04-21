@@ -194,6 +194,8 @@
       <div class="nav-item" onclick="showPage('trabajadores')"><span class="nav-icon">👷</span> Trabajadores</div>
       <div class="nav-item" onclick="showPage('tareas-david')"><span class="nav-icon">📋</span> Tareas La Pacheca</div>
       <div class="nav-item" onclick="showPage('incidencias')"><span class="nav-icon">⚠️</span> Incidencias</div>
+      <div class="nav-section">La Carrasca</div>
+      <div class="nav-item" onclick="showPage('trabajadores-carrasca')"><span class="nav-icon">👷</span> Trabajadores</div>
       <div class="nav-section">Encargados</div>
       <div class="nav-item" onclick="showPage('encargados')"><span class="nav-icon">👔</span> Encargados & PINs</div>
       <div class="nav-item" onclick="showPage('tareas-encargados')"><span class="nav-icon">📋</span> Tareas Encargados</div>
@@ -364,6 +366,63 @@
       </div>
     </div>
 
+    <div id="modalEditTrabajador" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+      <div style="background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--brown-dark);margin-bottom:1rem">✏️ Editar Trabajador</div>
+        <div class="form-grid">
+          <div class="field-group"><label>Nombre interno *</label><input type="text" id="editNombre" placeholder="Nombre..."></div>
+          <div class="field-group"><label>Alias (app)</label><input type="text" id="editAlias" placeholder="Alias..."></div>
+          <div class="field-group"><label>Nombre completo</label><input type="text" id="editNombreCompleto" placeholder="Nombre completo..."></div>
+          <div class="field-group"><label>DNI/NIE</label><input type="text" id="editDni" placeholder="DNI/NIE..."></div>
+          <div class="field-group"><label>Fecha de alta</label><input type="date" id="editFechaAlta"></div>
+          <div class="field-group"><label>Fecha de baja</label><input type="date" id="editFechaBaja"></div>
+          <div class="field-group"><label>Orden en lista</label><input type="number" id="editOrden" min="1"></div>
+          <div class="field-group" style="grid-column:1/-1">
+            <label>Fincas</label>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.3rem">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer">
+                <input type="checkbox" id="finca-pacheca" value="La Pacheca"> La Pacheca
+              </label>
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer">
+                <input type="checkbox" id="finca-carrasca" value="La Carrasca"> La Carrasca
+              </label>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:1rem">
+          <button class="btn-primary" onclick="saveEditTrabajador()">💾 Guardar</button>
+          <button class="btn-secondary" onclick="closeModalTrabajador()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: TRABAJADORES LA CARRASCA -->
+    <div class="page" id="page-trabajadores-carrasca">
+      <div class="msg" id="msg-trabajadores-carrasca"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="stc-activos">—</div><div class="stat-label">Activos</div></div>
+        <div class="stat-card"><div class="stat-num red" id="stc-bajas">—</div><div class="stat-label">Bajas</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="stc-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Añadir trabajador La Carrasca</div>
+        <div class="form-grid">
+          <div class="field-group"><label>Nombre interno *</label><input type="text" id="newTrabajadorC" placeholder="Ej: Alex"></div>
+          <div class="field-group"><label>Alias (app)</label><input type="text" id="newAliasC" placeholder="Ej: Alex"></div>
+          <div class="field-group"><label>Nombre completo</label><input type="text" id="newNombreCompletoC" placeholder="Ej: Alexander Israel Romero"></div>
+          <div class="field-group"><label>DNI/NIE</label><input type="text" id="newDniC" placeholder="Ej: X1234567A"></div>
+          <div class="field-group"><label>Fecha de alta *</label><input type="date" id="newFechaAltaC"></div>
+          <div class="field-group"><label>Orden en lista</label><input type="number" id="newOrdenC" placeholder="Ej: 10" min="1"></div>
+        </div>
+        <button class="btn-primary" id="btnAddTrabajadorC" onclick="addTrabajadorCarrasca()">+ Añadir</button>
+      </div>
+      <div class="card">
+        <div class="card-title">👷 Trabajadores La Carrasca</div>
+        <input class="search-box" id="searchTrabajadoresC" placeholder="Buscar trabajador..." oninput="filterTrabajadoresCarrasca()">
+        <div id="trabajadoresCList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
     <!-- PAGE: TAREAS DAVID -->
     <div class="page" id="page-tareas-david">
       <div class="msg" id="msg-tareas-david"></div>
@@ -502,6 +561,7 @@ const pages = {
   'tareas-tratamiento': { title: 'Tareas Tratamiento', sub: 'Tareas disponibles en el parte de tratamiento', load: loadTareasTrat },
   'aplicadores': { title: 'Aplicadores', sub: 'Gestión de aplicadores autorizados', load: loadAplicadores },
   'trabajadores': { title: 'Trabajadores La Pacheca', sub: 'Altas y bajas de trabajadores', load: loadTrabajadores },
+  'trabajadores-carrasca': { title: 'Trabajadores La Carrasca', sub: 'Altas y bajas de trabajadores de La Carrasca', load: loadTrabajadoresCarrasca },
   'tareas-david': { title: 'Tareas La Pacheca', sub: 'Tareas disponibles en el parte de David', load: loadTareasDavid },
   'incidencias': { title: 'Incidencias', sub: 'Registro de llegadas tardías de trabajadores', load: loadIncidencias },
   'encargados': { title: 'Encargados & PINs', sub: 'Gestión de encargados y acceso por PIN', load: loadEncargados },
@@ -899,6 +959,9 @@ function openEditTrabajador(id) {
   document.getElementById('editFechaAlta').value = t.fecha_alta || '';
   document.getElementById('editFechaBaja').value = t.fecha_baja || '';
   document.getElementById('editOrden').value = t.orden || '';
+  const fincas = t.fincas || [];
+  document.getElementById('finca-pacheca').checked = fincas.includes('La Pacheca');
+  document.getElementById('finca-carrasca').checked = fincas.includes('La Carrasca');
   document.getElementById('modalEditTrabajador').style.display = 'flex';
 }
 
@@ -909,6 +972,9 @@ function closeModalTrabajador() {
 
 async function saveEditTrabajador() {
   if (!trabajadorEditandoId) return;
+  const fincas = [];
+  if (document.getElementById('finca-pacheca').checked) fincas.push('La Pacheca');
+  if (document.getElementById('finca-carrasca').checked) fincas.push('La Carrasca');
   const body = {
     nombre: document.getElementById('editNombre').value.trim(),
     alias: document.getElementById('editAlias').value.trim() || null,
@@ -917,12 +983,14 @@ async function saveEditTrabajador() {
     fecha_alta: document.getElementById('editFechaAlta').value || null,
     fecha_baja: document.getElementById('editFechaBaja').value || null,
     orden: parseInt(document.getElementById('editOrden').value) || null,
+    fincas: fincas.length > 0 ? fincas : null,
   };
   const res = await sb(`trabajadores?id=eq.${trabajadorEditandoId}`, { method: 'PATCH', body: JSON.stringify(body) });
   if (res.ok) {
     showMsg('msg-trabajadores', '✅ Trabajador actualizado', 'success');
     closeModalTrabajador();
     await loadTrabajadores();
+    await loadTrabajadoresCarrasca();
   } else { showMsg('msg-trabajadores', 'Error al guardar', 'error'); }
 }
 
@@ -946,6 +1014,93 @@ async function reactivar(id, nombre) {
   await sb(`trabajadores?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ fecha_baja: null }) });
   showMsg('msg-trabajadores', `✅ ${nombre} reactivado`, 'success');
   await loadTrabajadores();
+}
+
+// ── TRABAJADORES LA CARRASCA ──
+let allTrabajadoresCarrasca = [];
+
+async function loadTrabajadoresCarrasca() {
+  const res = await sb('trabajadores?fincas=cs.{"La Carrasca"}&order=orden.asc,nombre.asc&select=*');
+  allTrabajadoresCarrasca = await res.json();
+  filterTrabajadoresCarrasca();
+  const hoy = new Date();
+  const act = allTrabajadoresCarrasca.filter(t => !t.fecha_baja || new Date(t.fecha_baja) >= hoy).length;
+  document.getElementById('stc-activos').textContent = act;
+  document.getElementById('stc-bajas').textContent = allTrabajadoresCarrasca.length - act;
+  document.getElementById('stc-total').textContent = allTrabajadoresCarrasca.length;
+}
+
+function filterTrabajadoresCarrasca() {
+  const q = document.getElementById('searchTrabajadoresC').value.toLowerCase();
+  const items = allTrabajadoresCarrasca.filter(t =>
+    t.nombre.toLowerCase().includes(q) || (t.alias||'').toLowerCase().includes(q) || (t.nombre_completo||'').toLowerCase().includes(q)
+  );
+  const hoy = new Date();
+  document.getElementById('trabajadoresCList').innerHTML = items.length ? items.map(t => {
+    const activo = !t.fecha_baja || new Date(t.fecha_baja) >= hoy;
+    const alta = t.fecha_alta ? new Date(t.fecha_alta).toLocaleDateString('es-ES') : '—';
+    const baja = t.fecha_baja ? new Date(t.fecha_baja).toLocaleDateString('es-ES') : '—';
+    const fincas = (t.fincas || []).join(', ');
+    return `<div class="list-item">
+      <div class="item-info">
+        <div class="item-name">
+          <span style="color:#999;font-size:0.75rem;margin-right:4px">#${t.orden||'?'}</span>
+          ${t.alias || t.nombre}
+          <span class="badge ${activo ? 'active' : 'inactive'}">${activo ? 'Activo' : 'Baja'}</span>
+        </div>
+        <div class="item-meta">${t.nombre_completo || t.nombre}${t.dni ? ' · '+t.dni : ''}</div>
+        <div class="item-meta">Alta: ${alta}${t.fecha_baja ? ' · Baja: '+baja : ''} · Fincas: ${fincas}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn-sm btn-success" onclick="openEditTrabajadorC('${t.id}')">✏️ Editar</button>
+        <button class="btn-sm btn-danger" onclick="deleteTrabajador('${t.id}','${t.alias||t.nombre}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="loading">No hay trabajadores</div>';
+}
+
+function openEditTrabajadorC(id) {
+  // Reuse the same modal but load from carrasca list
+  const t = allTrabajadoresCarrasca.find(x => x.id === id);
+  if (!t) return;
+  allTrabajadores = allTrabajadores.filter(x => x.id !== id);
+  allTrabajadores.push(t);
+  openEditTrabajador(id);
+  // Override msg target
+  trabajadorEditandoId = id;
+}
+
+async function addTrabajadorCarrasca() {
+  const nombre = document.getElementById('newTrabajadorC').value.trim();
+  const alias = document.getElementById('newAliasC').value.trim();
+  const nombreCompleto = document.getElementById('newNombreCompletoC').value.trim();
+  const dni = document.getElementById('newDniC').value.trim().toUpperCase();
+  const fechaAlta = document.getElementById('newFechaAltaC').value;
+  const orden = parseInt(document.getElementById('newOrdenC').value) || null;
+
+  if (!nombre || !fechaAlta) { showMsg('msg-trabajadores-carrasca', 'Introduce al menos nombre y fecha de alta', 'error'); return; }
+  const btn = document.getElementById('btnAddTrabajadorC'); btn.disabled = true;
+
+  let ordenFinal = orden;
+  if (!ordenFinal) {
+    const maxOrden = allTrabajadoresCarrasca.reduce((max, t) => Math.max(max, t.orden || 0), 0);
+    ordenFinal = maxOrden + 1;
+  }
+
+  const res = await sb('trabajadores', { method: 'POST', body: JSON.stringify({
+    nombre, alias: alias || nombre, nombre_completo: nombreCompleto || nombre,
+    dni: dni || null, fecha_alta: fechaAlta, orden: ordenFinal,
+    fincas: ['La Carrasca']
+  })});
+
+  if (res.ok) {
+    showMsg('msg-trabajadores-carrasca', `✅ "${alias || nombre}" añadido`, 'success');
+    ['newTrabajadorC','newAliasC','newNombreCompletoC','newDniC','newFechaAltaC','newOrdenC'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    await loadTrabajadoresCarrasca();
+  } else { showMsg('msg-trabajadores-carrasca', 'Error al añadir', 'error'); }
+  btn.disabled = false;
 }
 
 // ── TAREAS DAVID ──
