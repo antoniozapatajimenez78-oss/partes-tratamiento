@@ -328,8 +328,12 @@
       <div class="card">
         <div class="card-title">➕ Añadir trabajador</div>
         <div class="form-grid">
-          <div class="field-group"><label>Nombre completo</label><input type="text" id="newTrabajador" placeholder="Nombre..."></div>
-          <div class="field-group"><label>Fecha de alta</label><input type="date" id="newFechaAlta"></div>
+          <div class="field-group"><label>Nombre interno *</label><input type="text" id="newTrabajador" placeholder="Ej: Lurdes"></div>
+          <div class="field-group"><label>Alias (app)</label><input type="text" id="newAlias" placeholder="Ej: Lurdes"></div>
+          <div class="field-group"><label>Nombre completo</label><input type="text" id="newNombreCompleto" placeholder="Ej: Mª Lurdes Paredes Paredes"></div>
+          <div class="field-group"><label>DNI/NIE</label><input type="text" id="newDni" placeholder="Ej: X1234567A"></div>
+          <div class="field-group"><label>Fecha de alta *</label><input type="date" id="newFechaAlta"></div>
+          <div class="field-group"><label>Orden en lista</label><input type="number" id="newOrden" placeholder="Ej: 17" min="1"></div>
         </div>
         <button class="btn-primary" id="btnAddTrabajador" onclick="addTrabajador()">+ Añadir</button>
       </div>
@@ -337,6 +341,26 @@
         <div class="card-title">👷 Trabajadores La Pacheca</div>
         <input class="search-box" id="searchTrabajadores" placeholder="Buscar trabajador..." oninput="filterTrabajadores()">
         <div id="trabajadoresList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- MODAL EDITAR TRABAJADOR -->
+    <div id="modalEditTrabajador" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+      <div style="background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--brown-dark);margin-bottom:1rem">✏️ Editar Trabajador</div>
+        <div class="form-grid">
+          <div class="field-group"><label>Nombre interno *</label><input type="text" id="editNombre" placeholder="Nombre..."></div>
+          <div class="field-group"><label>Alias (app)</label><input type="text" id="editAlias" placeholder="Alias..."></div>
+          <div class="field-group"><label>Nombre completo</label><input type="text" id="editNombreCompleto" placeholder="Nombre completo..."></div>
+          <div class="field-group"><label>DNI/NIE</label><input type="text" id="editDni" placeholder="DNI/NIE..."></div>
+          <div class="field-group"><label>Fecha de alta</label><input type="date" id="editFechaAlta"></div>
+          <div class="field-group"><label>Fecha de baja</label><input type="date" id="editFechaBaja"></div>
+          <div class="field-group"><label>Orden en lista</label><input type="number" id="editOrden" min="1"></div>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:1rem">
+          <button class="btn-primary" onclick="saveEditTrabajador()">💾 Guardar</button>
+          <button class="btn-secondary" onclick="closeModalTrabajador()">Cancelar</button>
+        </div>
       </div>
     </div>
 
@@ -789,8 +813,10 @@ async function toggleAplicador(id, activo) {
 }
 
 // ── TRABAJADORES ──
+let trabajadorEditandoId = null;
+
 async function loadTrabajadores() {
-  const res = await sb('trabajadores?order=nombre.asc&select=*');
+  const res = await sb('trabajadores?order=orden.asc,nombre.asc&select=*');
   allTrabajadores = await res.json();
   filterTrabajadores();
   const hoy = new Date();
@@ -799,9 +825,10 @@ async function loadTrabajadores() {
   document.getElementById('st-bajas').textContent = allTrabajadores.length - act;
   document.getElementById('st-total').textContent = allTrabajadores.length;
 }
+
 function filterTrabajadores() {
   const q = document.getElementById('searchTrabajadores').value.toLowerCase();
-  const items = allTrabajadores.filter(t => t.nombre.toLowerCase().includes(q));
+  const items = allTrabajadores.filter(t => t.nombre.toLowerCase().includes(q) || (t.alias||'').toLowerCase().includes(q) || (t.nombre_completo||'').toLowerCase().includes(q));
   const hoy = new Date();
   document.getElementById('trabajadoresList').innerHTML = items.length ? items.map(t => {
     const activo = !t.fecha_baja || new Date(t.fecha_baja) >= hoy;
@@ -809,27 +836,96 @@ function filterTrabajadores() {
     const baja = t.fecha_baja ? new Date(t.fecha_baja).toLocaleDateString('es-ES') : '—';
     return `<div class="list-item">
       <div class="item-info">
-        <div class="item-name">${t.nombre} <span class="badge ${activo ? 'active' : 'inactive'}">${activo ? 'Activo' : 'Baja'}</span></div>
+        <div class="item-name">
+          <span style="color:#999;font-size:0.75rem;margin-right:4px">#${t.orden||'?'}</span>
+          ${t.alias || t.nombre}
+          <span class="badge ${activo ? 'active' : 'inactive'}">${activo ? 'Activo' : 'Baja'}</span>
+        </div>
+        <div class="item-meta">${t.nombre_completo || t.nombre}${t.dni ? ' · '+t.dni : ''}</div>
         <div class="item-meta">Alta: ${alta}${t.fecha_baja ? ' · Baja: '+baja : ''}</div>
       </div>
       <div class="item-actions">
-        ${activo ? `<button class="btn-sm btn-danger" onclick="darDeBaja('${t.id}','${t.nombre}')">Dar de baja</button>`
-                 : `<button class="btn-sm btn-success" onclick="reactivar('${t.id}','${t.nombre}')">Reactivar</button>`}
-        <button class="btn-sm btn-danger" onclick="deleteTrabajador('${t.id}','${t.nombre}')">🗑️</button>
+        <button class="btn-sm btn-success" onclick="openEditTrabajador('${t.id}')">✏️ Editar</button>
+        <button class="btn-sm btn-danger" onclick="deleteTrabajador('${t.id}','${t.alias||t.nombre}')">🗑️</button>
       </div>
     </div>`;
   }).join('') : '<div class="loading">No hay trabajadores</div>';
 }
+
 async function addTrabajador() {
   const nombre = document.getElementById('newTrabajador').value.trim();
+  const alias = document.getElementById('newAlias').value.trim();
+  const nombreCompleto = document.getElementById('newNombreCompleto').value.trim();
+  const dni = document.getElementById('newDni').value.trim().toUpperCase();
   const fechaAlta = document.getElementById('newFechaAlta').value;
-  if (!nombre || !fechaAlta) { showMsg('msg-trabajadores', 'Introduce nombre y fecha de alta', 'error'); return; }
+  const orden = parseInt(document.getElementById('newOrden').value) || null;
+
+  if (!nombre || !fechaAlta) { showMsg('msg-trabajadores', 'Introduce al menos nombre interno y fecha de alta', 'error'); return; }
   const btn = document.getElementById('btnAddTrabajador'); btn.disabled = true;
-  const res = await sb('trabajadores', { method: 'POST', body: JSON.stringify({ nombre, fecha_alta: fechaAlta }) });
-  if (res.ok) { showMsg('msg-trabajadores', `✅ "${nombre}" añadido`, 'success'); document.getElementById('newTrabajador').value = ''; await loadTrabajadores(); }
-  else { showMsg('msg-trabajadores', 'Error', 'error'); }
+
+  // Auto-assign orden if not provided
+  let ordenFinal = orden;
+  if (!ordenFinal) {
+    const maxOrden = allTrabajadores.reduce((max, t) => Math.max(max, t.orden || 0), 0);
+    ordenFinal = maxOrden + 1;
+  }
+
+  const res = await sb('trabajadores', { method: 'POST', body: JSON.stringify({
+    nombre, alias: alias || nombre, nombre_completo: nombreCompleto || nombre,
+    dni: dni || null, fecha_alta: fechaAlta, orden: ordenFinal
+  })});
+
+  if (res.ok) {
+    showMsg('msg-trabajadores', `✅ "${alias || nombre}" añadido con orden #${ordenFinal}`, 'success');
+    document.getElementById('newTrabajador').value = '';
+    document.getElementById('newAlias').value = '';
+    document.getElementById('newNombreCompleto').value = '';
+    document.getElementById('newDni').value = '';
+    document.getElementById('newFechaAlta').value = '';
+    document.getElementById('newOrden').value = '';
+    await loadTrabajadores();
+  } else { showMsg('msg-trabajadores', 'Error al añadir', 'error'); }
   btn.disabled = false;
 }
+
+function openEditTrabajador(id) {
+  const t = allTrabajadores.find(x => x.id === id);
+  if (!t) return;
+  trabajadorEditandoId = id;
+  document.getElementById('editNombre').value = t.nombre || '';
+  document.getElementById('editAlias').value = t.alias || '';
+  document.getElementById('editNombreCompleto').value = t.nombre_completo || '';
+  document.getElementById('editDni').value = t.dni || '';
+  document.getElementById('editFechaAlta').value = t.fecha_alta || '';
+  document.getElementById('editFechaBaja').value = t.fecha_baja || '';
+  document.getElementById('editOrden').value = t.orden || '';
+  document.getElementById('modalEditTrabajador').style.display = 'flex';
+}
+
+function closeModalTrabajador() {
+  document.getElementById('modalEditTrabajador').style.display = 'none';
+  trabajadorEditandoId = null;
+}
+
+async function saveEditTrabajador() {
+  if (!trabajadorEditandoId) return;
+  const body = {
+    nombre: document.getElementById('editNombre').value.trim(),
+    alias: document.getElementById('editAlias').value.trim() || null,
+    nombre_completo: document.getElementById('editNombreCompleto').value.trim() || null,
+    dni: document.getElementById('editDni').value.trim().toUpperCase() || null,
+    fecha_alta: document.getElementById('editFechaAlta').value || null,
+    fecha_baja: document.getElementById('editFechaBaja').value || null,
+    orden: parseInt(document.getElementById('editOrden').value) || null,
+  };
+  const res = await sb(`trabajadores?id=eq.${trabajadorEditandoId}`, { method: 'PATCH', body: JSON.stringify(body) });
+  if (res.ok) {
+    showMsg('msg-trabajadores', '✅ Trabajador actualizado', 'success');
+    closeModalTrabajador();
+    await loadTrabajadores();
+  } else { showMsg('msg-trabajadores', 'Error al guardar', 'error'); }
+}
+
 async function deleteTrabajador(id, nombre) {
   if (!confirm(`¿Eliminar a "${nombre}"? Esta acción no se puede deshacer.`)) return;
   const res = await sb(`trabajadores?id=eq.${id}`, { method: 'DELETE' });
@@ -844,6 +940,7 @@ async function darDeBaja(id, nombre) {
   showMsg('msg-trabajadores', `✅ ${nombre} dado de baja`, 'success');
   await loadTrabajadores();
 }
+
 async function reactivar(id, nombre) {
   if (!confirm(`¿Reactivar a ${nombre}?`)) return;
   await sb(`trabajadores?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ fecha_baja: null }) });
