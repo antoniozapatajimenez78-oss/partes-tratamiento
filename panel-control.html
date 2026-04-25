@@ -876,7 +876,7 @@ async function toggleAplicador(id, activo) {
 let trabajadorEditandoId = null;
 
 async function loadTrabajadores() {
-  const res = await sb('trabajadores?order=orden.asc,nombre.asc&select=*');
+  const res = await sb('trabajadores?fincas=cs.{"La Pacheca"}&order=orden.asc,nombre.asc&select=*');
   allTrabajadores = await res.json();
   filterTrabajadores();
   const hoy = new Date();
