@@ -186,16 +186,19 @@
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">General</div>
-      <div class="nav-item active" onclick="showPage('fincas')"><span class="nav-icon">🌾</span> Fincas & Cultivos</div>
+      <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span> Resumen del día</div>
+      <div class="nav-section">General</div>
+      <div class="nav-item" onclick="showPage('fincas')"><span class="nav-icon">🌾</span> Fincas & Cultivos</div>
       <div class="nav-item" onclick="showPage('productos')"><span class="nav-icon">🧪</span> Productos</div>
       <div class="nav-item" onclick="showPage('tareas-tratamiento')"><span class="nav-icon">📋</span> Tareas Tratamiento</div>
       <div class="nav-item" onclick="showPage('aplicadores')"><span class="nav-icon">👤</span> Aplicadores</div>
       <div class="nav-section">La Pacheca</div>
       <div class="nav-item" onclick="showPage('trabajadores')"><span class="nav-icon">👷</span> Trabajadores</div>
-      <div class="nav-item" onclick="showPage('tareas-david')"><span class="nav-icon">📋</span> Tareas La Pacheca</div>
+      <div class="nav-item" onclick="showPage('tareas-david')"><span class="nav-icon">📋</span> Tareas Jornada</div>
       <div class="nav-item" onclick="showPage('incidencias')"><span class="nav-icon">⚠️</span> Incidencias</div>
       <div class="nav-section">La Carrasca</div>
       <div class="nav-item" onclick="showPage('trabajadores-carrasca')"><span class="nav-icon">👷</span> Trabajadores</div>
+      <div class="nav-item" onclick="showPage('incidencias-carrasca')"><span class="nav-icon">⚠️</span> Incidencias</div>
       <div class="nav-section">Encargados</div>
       <div class="nav-item" onclick="showPage('encargados')"><span class="nav-icon">👔</span> Encargados & PINs</div>
       <div class="nav-item" onclick="showPage('tareas-encargados')"><span class="nav-icon">📋</span> Tareas Encargados</div>
@@ -215,8 +218,35 @@
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
     </div>
 
+    <!-- PAGE: DASHBOARD -->
+    <div class="page" id="page-dashboard">
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num green" id="dash-pacheca-hoy">—</div><div class="stat-label">Partes hoy La Pacheca</div></div>
+        <div class="stat-card"><div class="stat-num amber" id="dash-carrasca-hoy">—</div><div class="stat-label">Partes hoy La Carrasca</div></div>
+        <div class="stat-card"><div class="stat-num" id="dash-encargados-hoy">—</div><div class="stat-label">Partes hoy Encargados</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div class="card">
+          <div class="card-title">🌿 La Pacheca — Hoy</div>
+          <div id="dash-pacheca-list"><div class="loading">Cargando...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🌿 La Carrasca — Hoy</div>
+          <div id="dash-carrasca-list"><div class="loading">Cargando...</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚜 Encargados — Hoy</div>
+        <div id="dash-encargados-list"><div class="loading">Cargando...</div></div>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <div class="card-title">⚠️ Incidencias recientes</div>
+        <div id="dash-incidencias-list"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
     <!-- PAGE: FINCAS -->
-    <div class="page active" id="page-fincas">
+    <div class="page" id="page-fincas" style="display:none">
       <div class="msg" id="msg-fincas"></div>
       <div class="card">
         <div class="card-title">➕ Nueva finca</div>
@@ -464,6 +494,43 @@
       </div>
     </div>
 
+    <!-- PAGE: INCIDENCIAS LA CARRASCA -->
+    <div class="page" id="page-incidencias-carrasca">
+      <div class="msg" id="msg-incidencias-carrasca"></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num amber" id="sic-hoy">—</div><div class="stat-label">Hoy</div></div>
+        <div class="stat-card"><div class="stat-num red" id="sic-total">—</div><div class="stat-label">Total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Nueva incidencia La Carrasca</div>
+        <div class="form-row">
+          <div class="field-group">
+            <label>Trabajador</label>
+            <select id="nic-trabajador"><option value="">Selecciona...</option></select>
+          </div>
+          <div class="field-group">
+            <label>Fecha</label>
+            <input type="date" id="nic-fecha">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field-group">
+            <label>Hora de llegada</label>
+            <input type="time" id="nic-hora">
+          </div>
+          <div class="field-group">
+            <label>Observaciones</label>
+            <input type="text" id="nic-obs" placeholder="Motivo, notas...">
+          </div>
+        </div>
+        <button class="btn-primary" id="btnAddIncidenciaC" onclick="addIncidenciaCarrasca()">+ Registrar incidencia</button>
+      </div>
+      <div class="card">
+        <div class="card-title">⚠️ Incidencias registradas</div>
+        <div id="incidenciasCList"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
     <!-- PAGE: ENCARGADOS -->
     <div class="page" id="page-encargados">
       <div class="msg" id="msg-encargados"></div>
@@ -538,14 +605,16 @@ let allIncidencias = [];
 const PASSWORD = 'zapata';
 
 const pages = {
+  'dashboard': { title: 'Resumen del día', sub: 'Vista general de la actividad de hoy', load: loadDashboard },
   'fincas': { title: 'Fincas & Cultivos', sub: 'Gestión de fincas, cultivos y parcelas', load: loadFincas },
   'productos': { title: 'Productos', sub: 'Gestión del catálogo de productos fitosanitarios', load: loadProductos },
   'tareas-tratamiento': { title: 'Tareas Tratamiento', sub: 'Tareas disponibles en el parte de tratamiento', load: loadTareasTrat },
   'aplicadores': { title: 'Aplicadores', sub: 'Gestión de aplicadores autorizados', load: loadAplicadores },
   'trabajadores': { title: 'Trabajadores La Pacheca', sub: 'Altas y bajas de trabajadores', load: loadTrabajadores },
   'trabajadores-carrasca': { title: 'Trabajadores La Carrasca', sub: 'Altas y bajas de trabajadores de La Carrasca', load: loadTrabajadoresCarrasca },
-  'tareas-david': { title: 'Tareas La Pacheca', sub: 'Tareas disponibles en el parte de David', load: loadTareasDavid },
-  'incidencias': { title: 'Incidencias', sub: 'Registro de llegadas tardías de trabajadores', load: loadIncidencias },
+  'tareas-david': { title: 'Tareas Jornada', sub: 'Tareas disponibles en los partes de trabajo', load: loadTareasDavid },
+  'incidencias': { title: 'Incidencias La Pacheca', sub: 'Registro de llegadas tardías de trabajadores', load: loadIncidencias },
+  'incidencias-carrasca': { title: 'Incidencias La Carrasca', sub: 'Registro de llegadas tardías de trabajadores', load: loadIncidenciasCarrasca },
   'encargados': { title: 'Encargados & PINs', sub: 'Gestión de encargados y acceso por PIN', load: loadEncargados },
   'tareas-encargados': { title: 'Tareas Encargados', sub: 'Tareas disponibles en los partes de encargados', load: loadTareasEnc }
 };
@@ -561,7 +630,7 @@ function checkPassword() {
   if (document.getElementById('passwordInput').value === PASSWORD) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').classList.add('show');
-    loadFincas();
+    showPage('dashboard');
   } else {
     document.getElementById('loginError').style.display = 'block';
     document.getElementById('passwordInput').value = '';
@@ -1085,6 +1154,154 @@ async function addTrabajadorCarrasca() {
     await loadTrabajadoresCarrasca();
   } else { showMsg('msg-trabajadores-carrasca', 'Error al añadir', 'error'); }
   btn.disabled = false;
+}
+
+// ── DASHBOARD ──
+async function loadDashboard() {
+  const hoy = new Date().toISOString().split('T')[0];
+
+  // La Pacheca partes hoy
+  try {
+    const resPacheca = await sb(`partes_trabajo?fecha=eq.${hoy}&select=trabajador,tipo_trabajo,horas,finca,cultivo`);
+    const pacheca = await resPacheca.json();
+    document.getElementById('dash-pacheca-hoy').textContent = pacheca.length;
+    const trabajadoresP = [...new Set(pacheca.map(p => p.trabajador))];
+    document.getElementById('dash-pacheca-list').innerHTML = trabajadoresP.length
+      ? trabajadoresP.map(t => {
+          const partes = pacheca.filter(p => p.trabajador === t);
+          const horas = partes.reduce((s, p) => s + (parseFloat(p.horas) || 0), 0);
+          return `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.85rem">
+            <span>${t}</span><span style="color:var(--amber);font-weight:600">${horas}h</span>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--text-mid);font-size:0.85rem;padding:0.5rem 0">Sin partes hoy</div>';
+  } catch(e) { document.getElementById('dash-pacheca-list').innerHTML = '<div class="loading">Error</div>'; }
+
+  // La Carrasca partes hoy
+  try {
+    const resCarrasca = await sb(`partes_trabajo_carrasca?fecha=eq.${hoy}&select=trabajador,tipo_trabajo,horas,finca,cultivo`);
+    const carrasca = await resCarrasca.json();
+    document.getElementById('dash-carrasca-hoy').textContent = carrasca.length;
+    const trabajadoresC = [...new Set(carrasca.map(p => p.trabajador))];
+    document.getElementById('dash-carrasca-list').innerHTML = trabajadoresC.length
+      ? trabajadoresC.map(t => {
+          const partes = carrasca.filter(p => p.trabajador === t);
+          const horas = partes.reduce((s, p) => s + (parseFloat(p.horas) || 0), 0);
+          return `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.85rem">
+            <span>${t}</span><span style="color:var(--amber);font-weight:600">${horas}h</span>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--text-mid);font-size:0.85rem;padding:0.5rem 0">Sin partes hoy</div>';
+  } catch(e) { document.getElementById('dash-carrasca-list').innerHTML = '<div class="loading">Error</div>'; }
+
+  // Encargados partes hoy
+  try {
+    const resEnc = await sb(`partes_encargados?fecha=eq.${hoy}&select=trabajador,tipo_trabajo,horas,finca`);
+    const encargados = await resEnc.json();
+    document.getElementById('dash-encargados-hoy').textContent = encargados.length;
+    const trabajadoresE = [...new Set(encargados.map(p => p.trabajador))];
+    document.getElementById('dash-encargados-list').innerHTML = trabajadoresE.length
+      ? trabajadoresE.map(t => {
+          const partes = encargados.filter(p => p.trabajador === t);
+          const horas = partes.reduce((s, p) => s + (parseFloat(p.horas) || 0), 0);
+          const tareas = partes.map(p => p.tipo_trabajo).join(', ');
+          return `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.85rem">
+            <span><strong>${t}</strong> · ${tareas}</span><span style="color:var(--amber);font-weight:600">${horas}h</span>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--text-mid);font-size:0.85rem;padding:0.5rem 0">Sin partes hoy</div>';
+  } catch(e) { document.getElementById('dash-encargados-list').innerHTML = '<div class="loading">Error</div>'; }
+
+  // Incidencias recientes
+  try {
+    const resInc = await sb(`incidencias?order=created_at.desc&limit=5&select=*`);
+    const incidencias = await resInc.json();
+    document.getElementById('dash-incidencias-list').innerHTML = incidencias.length
+      ? incidencias.map(i => `
+          <div style="padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.85rem">
+            <span style="font-weight:600">${i.trabajador}</span> · ${i.fecha} · Llegó a las ${i.hora_real || '?'}
+            ${i.observaciones ? `<span style="color:var(--text-mid)"> · ${i.observaciones}</span>` : ''}
+          </div>`).join('')
+      : '<div style="color:var(--text-mid);font-size:0.85rem;padding:0.5rem 0">Sin incidencias recientes</div>';
+  } catch(e) {}
+}
+
+// ── INCIDENCIAS LA CARRASCA ──
+async function loadIncidenciasCarrasca() {
+  const hoy = new Date().toISOString().split('T')[0];
+
+  // Populate trabajador selector
+  const sel = document.getElementById('nic-trabajador');
+  sel.innerHTML = '<option value="">Selecciona...</option>';
+  allTrabajadoresCarrasca.forEach(t => {
+    sel.innerHTML += `<option value="${t.alias || t.nombre}">${t.alias || t.nombre}</option>`;
+  });
+  if (allTrabajadoresCarrasca.length === 0) {
+    await loadTrabajadoresCarrasca();
+    allTrabajadoresCarrasca.forEach(t => {
+      sel.innerHTML += `<option value="${t.alias || t.nombre}">${t.alias || t.nombre}</option>`;
+    });
+  }
+  document.getElementById('nic-fecha').value = hoy;
+
+  // Load incidencias from Supabase (reuse same table with finca filter if needed, or use notes)
+  const res = await sb('incidencias?order=fecha.desc,created_at.desc&select=*');
+  const all = await res.json();
+  // Filter by carrasca workers
+  const carrasca = allTrabajadoresCarrasca.map(t => (t.alias || t.nombre).toUpperCase());
+  const incidencias = all.filter(i => carrasca.includes(i.trabajador?.toUpperCase()));
+
+  const hoyItems = incidencias.filter(i => i.fecha === hoy);
+  document.getElementById('sic-hoy').textContent = hoyItems.length;
+  document.getElementById('sic-total').textContent = incidencias.length;
+
+  document.getElementById('incidenciasCList').innerHTML = incidencias.length
+    ? incidencias.map(i => `
+        <div class="list-item">
+          <div class="item-info">
+            <div class="item-name">${i.trabajador} <span class="badge active">${i.fecha}</span></div>
+            <div class="item-meta">Llegó a las ${i.hora_real || '?'}${i.observaciones ? ' · ' + i.observaciones : ''}</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm btn-danger" onclick="deleteIncidencia('${i.id}', true)">🗑️</button>
+          </div>
+        </div>`).join('')
+    : '<div class="loading">No hay incidencias</div>';
+}
+
+async function addIncidenciaCarrasca() {
+  const trabajador = document.getElementById('nic-trabajador').value;
+  const fecha = document.getElementById('nic-fecha').value;
+  const hora = document.getElementById('nic-hora').value;
+  const obs = document.getElementById('nic-obs').value.trim();
+
+  if (!trabajador || !fecha) { showMsg('msg-incidencias-carrasca', 'Selecciona trabajador y fecha', 'error'); return; }
+  const btn = document.getElementById('btnAddIncidenciaC'); btn.disabled = true;
+
+  const res = await sb('incidencias', { method: 'POST', body: JSON.stringify({
+    trabajador: trabajador.toUpperCase(), fecha, hora_real: hora || null, observaciones: obs || null
+  })});
+
+  if (res.ok) {
+    // Also notify Sheets
+    if (SHEETS_URL_DAVID) {
+      const formData = new FormData();
+      formData.append('payload', JSON.stringify({ tipo: 'incidencia', trabajador, fecha, hora_real: hora, observaciones: obs }));
+      fetch(SHEETS_URL_DAVID, { method: 'POST', mode: 'no-cors', body: formData });
+    }
+    showMsg('msg-incidencias-carrasca', '✅ Incidencia registrada', 'success');
+    document.getElementById('nic-trabajador').value = '';
+    document.getElementById('nic-hora').value = '';
+    document.getElementById('nic-obs').value = '';
+    await loadIncidenciasCarrasca();
+  } else { showMsg('msg-incidencias-carrasca', 'Error al registrar', 'error'); }
+  btn.disabled = false;
+}
+
+async function deleteIncidencia(id, carrasca = false) {
+  if (!confirm('¿Eliminar esta incidencia?')) return;
+  const res = await sb(`incidencias?id=eq.${id}`, { method: 'DELETE' });
+  if (res.ok) { carrasca ? await loadIncidenciasCarrasca() : await loadIncidencias(); }
 }
 
 // ── TAREAS DAVID ──
