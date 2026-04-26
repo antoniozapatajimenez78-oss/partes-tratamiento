@@ -358,25 +358,6 @@
           <div class="field-group"><label>Fecha de alta</label><input type="date" id="editFechaAlta"></div>
           <div class="field-group"><label>Fecha de baja</label><input type="date" id="editFechaBaja"></div>
           <div class="field-group"><label>Orden en lista</label><input type="number" id="editOrden" min="1"></div>
-        </div>
-        <div style="display:flex;gap:0.75rem;margin-top:1rem">
-          <button class="btn-primary" onclick="saveEditTrabajador()">💾 Guardar</button>
-          <button class="btn-secondary" onclick="closeModalTrabajador()">Cancelar</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="modalEditTrabajador" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
-      <div style="background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto">
-        <div style="font-size:1.1rem;font-weight:700;color:var(--brown-dark);margin-bottom:1rem">✏️ Editar Trabajador</div>
-        <div class="form-grid">
-          <div class="field-group"><label>Nombre interno *</label><input type="text" id="editNombre" placeholder="Nombre..."></div>
-          <div class="field-group"><label>Alias (app)</label><input type="text" id="editAlias" placeholder="Alias..."></div>
-          <div class="field-group"><label>Nombre completo</label><input type="text" id="editNombreCompleto" placeholder="Nombre completo..."></div>
-          <div class="field-group"><label>DNI/NIE</label><input type="text" id="editDni" placeholder="DNI/NIE..."></div>
-          <div class="field-group"><label>Fecha de alta</label><input type="date" id="editFechaAlta"></div>
-          <div class="field-group"><label>Fecha de baja</label><input type="date" id="editFechaBaja"></div>
-          <div class="field-group"><label>Orden en lista</label><input type="number" id="editOrden" min="1"></div>
           <div class="field-group" style="grid-column:1/-1">
             <label>Fincas</label>
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.3rem">
@@ -389,8 +370,9 @@
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:0.75rem;margin-top:1rem">
+        <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap">
           <button class="btn-primary" onclick="saveEditTrabajador()">💾 Guardar</button>
+          <button class="btn-success" id="btnReactivar" onclick="reactivarDesdeModal()" style="display:none;background:#27ae60;color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem">✅ Reactivar</button>
           <button class="btn-secondary" onclick="closeModalTrabajador()">Cancelar</button>
         </div>
       </div>
@@ -949,7 +931,7 @@ async function addTrabajador() {
 }
 
 function openEditTrabajador(id) {
-  const t = allTrabajadores.find(x => x.id === id);
+  const t = allTrabajadores.find(x => x.id === id) || allTrabajadoresCarrasca.find(x => x.id === id);
   if (!t) return;
   trabajadorEditandoId = id;
   document.getElementById('editNombre').value = t.nombre || '';
@@ -962,7 +944,16 @@ function openEditTrabajador(id) {
   const fincas = t.fincas || [];
   document.getElementById('finca-pacheca').checked = fincas.includes('La Pacheca');
   document.getElementById('finca-carrasca').checked = fincas.includes('La Carrasca');
+  // Show reactivar button only if worker is on baja
+  const deBaja = t.fecha_baja && new Date(t.fecha_baja) < new Date();
+  document.getElementById('btnReactivar').style.display = deBaja ? 'block' : 'none';
   document.getElementById('modalEditTrabajador').style.display = 'flex';
+}
+
+async function reactivarDesdeModal() {
+  if (!trabajadorEditandoId) return;
+  document.getElementById('editFechaBaja').value = '';
+  await saveEditTrabajador();
 }
 
 function closeModalTrabajador() {
@@ -1060,14 +1051,7 @@ function filterTrabajadoresCarrasca() {
 }
 
 function openEditTrabajadorC(id) {
-  // Reuse the same modal but load from carrasca list
-  const t = allTrabajadoresCarrasca.find(x => x.id === id);
-  if (!t) return;
-  allTrabajadores = allTrabajadores.filter(x => x.id !== id);
-  allTrabajadores.push(t);
   openEditTrabajador(id);
-  // Override msg target
-  trabajadorEditandoId = id;
 }
 
 async function addTrabajadorCarrasca() {
