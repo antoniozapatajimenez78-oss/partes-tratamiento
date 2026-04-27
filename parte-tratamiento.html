@@ -714,7 +714,8 @@ function buildRadioGrid(containerId, items, stateKey) {
         updateVariedades();
       }
       if (stateKey === 'tarea') {
-        updateVariedades();
+        if (state.finca) updateCultivos();
+        else updateVariedades();
       }
     });
     grid.appendChild(lbl);
@@ -730,6 +731,9 @@ function updateCultivos() {
   grid.innerHTML = '';
 
   cultivos.forEach(item => {
+    // CÍTRICOS solo aparece cuando tarea es Abonar
+    if (item === 'CÍTRICOS' && state.tarea !== 'Abonar') return;
+
     const lbl = document.createElement('label');
     lbl.className = 'opt-label';
     lbl.innerHTML = `<input type="checkbox" name="cultivo" value="${item}"><span class="sq"></span>${item}`;
