@@ -713,6 +713,9 @@ function buildRadioGrid(containerId, items, stateKey) {
       if (stateKey === 'cultivo') {
         updateVariedades();
       }
+      if (stateKey === 'tarea') {
+        updateVariedades();
+      }
     });
     grid.appendChild(lbl);
   });
@@ -762,11 +765,20 @@ function updateVariedades() {
     return;
   }
 
-  // If Cítricos is selected, auto-fill and hide variedad selector
-  if (state.cultivos.includes('Cítricos')) {
-    state.variedades = ['Cítricos'];
-    if (gVariedad) gVariedad.style.display = 'none';
-    return;
+  // Cítricos solo aparece si tarea=Abonar + finca=Los Llanos + cultivo=CÍTRICOS
+  if (state.cultivos.includes('CÍTRICOS')) {
+    if (state.tarea === 'Abonar' && state.finca === 'Los Llanos') {
+      state.variedades = ['CÍTRICOS'];
+      if (gVariedad) gVariedad.style.display = 'none';
+      return;
+    } else {
+      // Si no es Abonar+Los Llanos, quitar CÍTRICOS de cultivos seleccionados
+      state.cultivos = state.cultivos.filter(c => c !== 'CÍTRICOS');
+      // Deseleccionar visualmente
+      document.querySelectorAll('#cultivo-grid .opt-label').forEach(l => {
+        if (l.textContent.trim() === 'CÍTRICOS') l.classList.remove('checked');
+      });
+    }
   }
 
   if (gVariedad) gVariedad.style.display = '';
@@ -785,13 +797,10 @@ function updateVariedades() {
     state.cultivos.forEach(cultivo => {
       const vars = fincaData[state.finca][cultivo] || [];
       if (vars.length === 0) return;
-
-      // Add cultivo label
       const lbl = document.createElement('div');
       lbl.style.cssText = 'grid-column:1/-1;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--green-mid);margin-top:0.5rem;padding-bottom:0.2rem;border-bottom:1px solid var(--border)';
       lbl.textContent = cultivo;
       grid.appendChild(lbl);
-
       vars.forEach(v => addVariedadCheckbox(grid, v));
     });
   } else {
