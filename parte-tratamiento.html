@@ -5,27 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parte de Tratamiento</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --green-dark: #1a2e1a;
-    --green-mid: #2d5a27;
-    --green-light: #4a8c3f;
-    --green-accent: #7bc67a;
-    --earth: #c4a265;
-    --earth-light: #e8d5b0;
-    --cream: #f5f0e8;
-    --white: #fdfcf9;
-    --text-dark: #1a2e1a;
-    --text-mid: #3d5c3a;
-    --border: #c8d9c4;
-    --shadow: rgba(26,46,26,0.12);
+    :root {
+    --zap-dark: #1a5c43;
+    --zap-mid: #2d7a5a;
+    --zap-light: #2eb872;
+    --zap-pale: #e8f7ee;
+    --zap-bg: #f0f7f4;
+    --zap-border: #c8e6d8;
+    --white: #ffffff;
+    --cream: #f0f7f4;
+    --text-dark: #0d2b1e;
+    --text-mid: #2d5a40;
+    --border: #c8e6d8;
+    --amber: #2eb872;
+    --amber-light: #4ecb8d;
+    --brown-dark: #1a5c43;
+    --brown-mid: #2d7a5a;
+    --brown-light: #3d9a70;
+    --shadow: rgba(26,92,67,0.10);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     background: var(--cream);
     min-height: 100vh;
     color: var(--text-dark);
@@ -73,7 +78,7 @@
     margin-bottom: 0.75rem;
   }
   .header h1 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Sora', sans-serif;
     font-size: 2.8rem;
     color: var(--white);
     letter-spacing: 0.05em;
@@ -114,7 +119,7 @@
   }
 
   .card-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Sora', sans-serif;
     font-size: 1.1rem;
     letter-spacing: 0.08em;
     color: var(--green-mid);
@@ -149,7 +154,7 @@
     padding: 0.7rem 1rem;
     border: 1.5px solid var(--border);
     border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 0.95rem;
     color: var(--text-dark);
     background: var(--cream);
@@ -244,7 +249,7 @@
   }
   .product-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
   .product-num {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Sora', sans-serif;
     font-size: 1.5rem;
     color: var(--earth);
     line-height: 1;
@@ -267,7 +272,7 @@
     color: var(--white);
     border: none;
     border-radius: 12px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Sora', sans-serif;
     font-size: 1.2rem;
     letter-spacing: 0.12em;
     cursor: pointer;
@@ -290,7 +295,7 @@
     color: var(--text-mid);
     border: 1.5px solid var(--border);
     border-radius: 12px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.2s;
@@ -326,7 +331,7 @@
     font-size: 3rem; margin-bottom: 1rem;
   }
   .success-box h2 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Sora', sans-serif;
     font-size: 1.8rem;
     letter-spacing: 0.05em;
     color: var(--green-dark);
@@ -339,7 +344,7 @@
     color: white;
     border: none;
     border-radius: 10px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Sora', sans-serif;
     font-size: 1rem;
     letter-spacing: 0.1em;
     cursor: pointer;
@@ -444,22 +449,55 @@
   }
   .eco-dot.ok { background: #4a8c3f; }
   .eco-dot.warn { background: #c0392b; }
+
+  /* Zapata brand overrides */
+  .card { border-color: #c8e6d8; }
+  .card-title { color: #1a5c43; }
+  .card-title::before { content:''; display:inline-block; width:3px; height:16px; background:#2eb872; border-radius:2px; margin-right:4px; flex-shrink:0; }
+  .card-title .icon { background:#2eb872; }
+  .tarea-num { color:#2eb872; }
+  .btn-submit { background: #1a5c43; }
+  .btn-submit:hover { background: #0d3d2c; box-shadow:0 6px 20px rgba(26,92,67,0.25); }
+  .btn-add-tarea { border-color:#2eb872; color:#1a5c43; }
+  .btn-add-tarea:hover { background:rgba(46,184,114,0.06); }
+  .btn-confirm { background: #1a5c43; }
+  .btn-new { background: #1a5c43; }
+  .overlay { background:rgba(13,61,44,0.85); }
+  .opt-label:hover { border-color:#2eb872; background:rgba(46,184,114,0.05); }
+  .opt-label.worker-done { background:#e8f7ee; border-color:#2eb872; color:#1a3d2b; }
+  .opt-label.worker-done .dot { background:#2eb872; border-color:#2eb872; }
+  .tarea-section { color:#2d7a5a; }
+  input:focus, select:focus, textarea:focus { border-color:#2eb872; box-shadow:0 0 0 3px rgba(46,184,114,0.12); }
+  .success-box h2 { color:#1a5c43; }
+  .overlay-title { color:#1a5c43; }
+  .header-tag { background:rgba(78,203,141,0.2); color:#4ecb8d; border:1px solid rgba(78,203,141,0.3); }
+  .cal-day.today { outline-color:#2eb872; }
+  .btn-clear:hover { border-color:#1a5c43; color:#1a5c43; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-inner">
-    <div class="header-tag">🌿 Agricultura</div>
-    <h1>Parte de<br>Tratamiento</h1>
-    <p>Registro de aplicaciones fitosanitarias</p>
+    <div class="header-logo"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50 18 L50 82" stroke="white" stroke-width="4.5" stroke-linecap="round"/><path d="M50 26 C50 26 74 31 77 50 C80 69 50 74 50 74" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M50 36 C50 36 28 40 25 52 C22 65 50 68 50 68" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="50" rx="7" ry="5.5" stroke="white" stroke-width="3.5" fill="none"/></svg></div>
+    <div class="header-text">
+      <div class="header-brand">
+        <span class="header-brand-main">zapata</span>
+        <span class="header-brand-sub">agroinver</span>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="header-tag">🌿 Agricultura</div>
+      <h1>Parte de Tratamiento</h1>
+      <p>Registro de aplicaciones fitosanitarias</p>
+    </div>
   </div>
 </div>
 
 <div class="form-container">
   <div id="loading-screen" style="text-align:center;padding:3rem 1rem;color:var(--text-mid)">
     <div style="font-size:2rem;margin-bottom:0.75rem">🌿</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.1em;color:var(--green-dark)">Cargando datos...</div>
+    <div style="font-family:'Sora',sans-serif;font-size:1.2rem;letter-spacing:0.1em;color:var(--green-dark)">Cargando datos...</div>
   </div>
   <div id="app-content" style="display:none">
   <p class="required-note"><span style="color:#c0392b">*</span> Campos obligatorios</p>
@@ -546,7 +584,7 @@
       <div class="card-title"><span class="icon">💬</span> Observaciones</div>
       <div class="field-group">
         <label>Comentarios <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;opacity:0.7">(opcional)</span></label>
-        <textarea id="comentarios" name="comentarios" rows="3" placeholder="Incidencias, observaciones o cualquier detalle relevante del tratamiento..." style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:var(--text-dark);background:var(--cream);resize:vertical;outline:none;transition:border-color 0.2s,box-shadow 0.2s;" onfocus="this.style.borderColor='var(--green-light)';this.style.boxShadow='0 0 0 3px rgba(74,140,63,0.12)';this.style.background='var(--white)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';this.style.background='var(--cream)'"></textarea>
+        <textarea id="comentarios" name="comentarios" rows="3" placeholder="Incidencias, observaciones o cualquier detalle relevante del tratamiento..." style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.95rem;color:var(--text-dark);background:var(--cream);resize:vertical;outline:none;transition:border-color 0.2s,box-shadow 0.2s;" onfocus="this.style.borderColor='var(--green-light)';this.style.boxShadow='0 0 0 3px rgba(74,140,63,0.12)';this.style.background='var(--white)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';this.style.background='var(--cream)'"></textarea>
       </div>
     </div>
 
@@ -563,12 +601,12 @@
   <div class="success-box" style="max-width:420px;width:95%;max-height:85vh;overflow-y:auto;text-align:left;padding:1.5rem">
     <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:0.75rem">
       <span style="font-size:1.4rem">📋</span>
-      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.05em;color:var(--green-dark)">Resumen del Parte</h2>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;letter-spacing:0.05em;color:var(--green-dark)">Resumen del Parte</h2>
     </div>
     <div id="review-content" style="font-size:0.88rem;color:var(--text-dark);line-height:1.8"></div>
     <div style="display:flex;gap:0.75rem;margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem">
-      <button onclick="closeReview()" style="flex:1;padding:0.75rem;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;color:var(--text-mid)">✏️ Modificar</button>
-      <button onclick="confirmAndSend()" id="btn-confirm" style="flex:1.5;padding:0.75rem;background:var(--green-dark);color:white;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.08em;cursor:pointer">✅ Confirmar y Enviar</button>
+      <button onclick="closeReview()" style="flex:1;padding:0.75rem;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;cursor:pointer;color:var(--text-mid)">✏️ Modificar</button>
+      <button onclick="confirmAndSend()" id="btn-confirm" style="flex:1.5;padding:0.75rem;background:var(--green-dark);color:white;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:1rem;letter-spacing:0.08em;cursor:pointer">✅ Confirmar y Enviar</button>
     </div>
   </div>
 </div>
@@ -715,12 +753,23 @@ function updateCultivos() {
 function updateVariedades() {
   state.variedades = [];
   const grid = document.getElementById('variedad-grid');
+  const gVariedad = document.getElementById('g-variedad');
   grid.innerHTML = '';
 
   if (!state.finca || state.cultivos.length === 0) {
     grid.innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);opacity:0.6;padding:0.3rem 0">Selecciona primero un cultivo</div>';
+    if (gVariedad) gVariedad.style.display = '';
     return;
   }
+
+  // If Cítricos is selected, auto-fill and hide variedad selector
+  if (state.cultivos.includes('Cítricos')) {
+    state.variedades = ['Cítricos'];
+    if (gVariedad) gVariedad.style.display = 'none';
+    return;
+  }
+
+  if (gVariedad) gVariedad.style.display = '';
 
   // Gather all variedades from selected cultivos, avoiding duplicates
   const todasVariedades = [];
@@ -1498,10 +1547,7 @@ async function confirmAndSend() {
   btn.textContent = 'Enviando...';
   btn.disabled = true;
 
-  const [savedDB, savedSheets] = await Promise.all([
-    saveParteToSupabase(parteData),
-    saveToSheets(parteData)
-  ]);
+  const savedDB = await saveParteToSupabase(parteData);
 
   btn.textContent = '✅ Confirmar y Enviar';
   btn.disabled = false;
@@ -1513,6 +1559,7 @@ async function confirmAndSend() {
     : '⚠️ Parte enviado pero hubo un problema al guardar. Contacta con la oficina.';
 
   document.getElementById('successOverlay').classList.add('show');
+  saveToSheets(parteData);
   parteData = null;
 }
 
