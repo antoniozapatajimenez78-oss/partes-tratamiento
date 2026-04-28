@@ -694,7 +694,7 @@ function updateCultivos() {
   cultivos.forEach(item => {
     // CÍTRICOS solo aparece cuando tarea es Abonar
     const tareaSeleccionada = document.querySelector('#tarea-grid .opt-label.checked')?.querySelector('input')?.value;
-    if (item === 'CÍTRICOS' && tareaSeleccionada !== 'Abonar') return;
+    if (item === 'CÍTRICOS' && tareaSeleccionada?.toUpperCase() !== 'ABONAR') return;
 
     const lbl = document.createElement('label');
     lbl.className = 'opt-label';
