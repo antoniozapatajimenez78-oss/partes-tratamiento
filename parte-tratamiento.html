@@ -733,14 +733,12 @@ function updateVariedades() {
 
   // Cítricos solo aparece si tarea=Abonar + finca=Los Llanos + cultivo=CÍTRICOS
   if (state.cultivos.includes('CÍTRICOS')) {
-    if (state.tarea === 'Abonar' && state.finca === 'Los Llanos') {
+    if (state.tarea?.toUpperCase() === 'ABONAR' && state.finca === 'Los Llanos') {
       state.variedades = ['CÍTRICOS'];
       if (gVariedad) gVariedad.style.display = 'none';
       return;
     } else {
-      // Si no es Abonar+Los Llanos, quitar CÍTRICOS de cultivos seleccionados
       state.cultivos = state.cultivos.filter(c => c !== 'CÍTRICOS');
-      // Deseleccionar visualmente
       document.querySelectorAll('#cultivo-grid .opt-label').forEach(l => {
         if (l.textContent.trim() === 'CÍTRICOS') l.classList.remove('checked');
       });
