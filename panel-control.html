@@ -387,7 +387,8 @@
           <div class="field-group"><label>DNI/NIE</label><input type="text" id="editDni" placeholder="DNI/NIE..."></div>
           <div class="field-group"><label>Fecha de alta</label><input type="date" id="editFechaAlta"></div>
           <div class="field-group"><label>Fecha de baja</label><input type="date" id="editFechaBaja"></div>
-          <div class="field-group"><label>Orden en lista</label><input type="number" id="editOrden" min="1"></div>
+          <div class="field-group"><label>Orden en La Pacheca</label><input type="number" id="editOrden" min="1"></div>
+          <div class="field-group"><label>Orden en La Carrasca</label><input type="number" id="editOrdenCarrasca" min="1"></div>
           <div class="field-group" style="grid-column:1/-1">
             <label>Fincas</label>
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.3rem">
@@ -600,7 +601,7 @@
 <script>
 const SUPABASE_URL = 'https://jecqfntpvzwipjcleqbl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3FmbnRwdnp3aXBqY2xlcWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzE2NjIsImV4cCI6MjA5MDQ0NzY2Mn0.J26k1VElLscwOxhGTBXpyw-OnXZ-BZOiBW5vCG3CreI';
-const SHEETS_URL_DAVID = 'https://script.google.com/macros/s/AKfycbzQIyK3alrLk-d2WkCAeclAPNeLEWQLrn36EHoASG5_46v-9AizoI5z-7by4FIE9U-L/exec';
+const SHEETS_URL_DAVID = 'https://script.google.com/macros/s/AKfycbzNs-QXZigrmWbF1mGwyszvSZa34UQ5mRXCc-7LK3dokbMPqddq7loN3MqSrpQN6w1k/exec';
 let allIncidencias = [];
 const PASSWORD = 'zapata';
 
@@ -1010,6 +1011,7 @@ function openEditTrabajador(id) {
   document.getElementById('editFechaAlta').value = t.fecha_alta || '';
   document.getElementById('editFechaBaja').value = t.fecha_baja || '';
   document.getElementById('editOrden').value = t.orden || '';
+  document.getElementById('editOrdenCarrasca').value = t.orden_carrasca || '';
   const fincas = t.fincas || [];
   document.getElementById('finca-pacheca').checked = fincas.includes('La Pacheca');
   document.getElementById('finca-carrasca').checked = fincas.includes('La Carrasca');
@@ -1043,6 +1045,7 @@ async function saveEditTrabajador() {
     fecha_alta: document.getElementById('editFechaAlta').value || null,
     fecha_baja: document.getElementById('editFechaBaja').value || null,
     orden: parseInt(document.getElementById('editOrden').value) || null,
+    orden_carrasca: parseInt(document.getElementById('editOrdenCarrasca').value) || null,
     fincas: fincas.length > 0 ? fincas : null,
   };
   const res = await sb(`trabajadores?id=eq.${trabajadorEditandoId}`, { method: 'PATCH', body: JSON.stringify(body) });
